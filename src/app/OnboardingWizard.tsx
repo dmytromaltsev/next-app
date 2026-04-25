@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Inter } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
@@ -49,6 +48,7 @@ const LANGUAGE_OPTIONS: Array<{
 ];
 
 function headerTitle(stepId: OnboardingStepId): string {
+  if (stepId === "loading" || stepId === "email") return "Ruut";
   if (stepId === "goals" || stepId === "learningStyle" || stepId === "struggles") return "Your plan";
   return "My profile";
 }
@@ -104,48 +104,77 @@ function canProceed(stepId: OnboardingStepId, a: OnboardingAnswers) {
   }
 }
 
-function validationHint(stepId: OnboardingStepId): string | null {
-  switch (stepId) {
-    case "email":
-      return "Enter a valid email (e.g. you@example.com).";
-    default:
-      return null;
-  }
+function isValidEmail(raw: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.trim());
 }
 
-const REVIEWS = [
-  { quote: "I finally speak confidently on trips—10 minutes a day was enough to build momentum.", name: "Maya, 29" },
-  { quote: "Clear goals + short lessons. I stopped quitting after week two.", name: "Jonas, 41" },
-  { quote: "The reminders match how I actually learn. Huge difference vs. random apps.", name: "Priya, 36" },
-];
-
 function LoadingStep() {
+  const [pct, setPct] = useState(0);
+  useEffect(() => {
+    const start = performance.now();
+    const duration = 3800;
+    let frame = 0;
+    function tick(now: number) {
+      const t = Math.min(1, (now - start) / duration);
+      setPct(Math.round(t * 99));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    }
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const r = 88;
+  const circumference = 2 * Math.PI * r;
+  const dashOffset = circumference * (1 - pct / 100);
+
   return (
-    <div className="space-y-8">
-      <p className="text-center text-sm text-funnel-muted">Preparing your personalized plan…</p>
-      <div className="space-y-3">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-2.5 overflow-hidden rounded-full bg-funnel-track">
-            <motion.div
-              className="h-full rounded-full bg-funnel-bar"
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ delay: i * 0.32, duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </div>
-        ))}
+    <div className="mx-auto flex w-full max-w-md flex-col items-center px-1">
+      <h2 className="sr-only">Building your plan</h2>
+
+      <div className="relative mx-auto aspect-square w-[min(100%,220px)]">
+        <svg className="h-full w-full -rotate-90" viewBox="0 0 200 200" aria-hidden>
+          <circle cx="100" cy="100" r={r} fill="none" className="stroke-funnel-track" strokeWidth="14" />
+          <circle
+            cx="100"
+            cy="100"
+            r={r}
+            fill="none"
+            className="stroke-funnel-primary"
+            strokeWidth="14"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+          />
+        </svg>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="text-[2.35rem] font-bold leading-none tracking-tight text-funnel-primary">{pct}%</span>
+        </div>
       </div>
-      <div className="space-y-4 border-t border-funnel-border pt-6">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-funnel-muted">Learners like you</p>
-        {REVIEWS.map((r) => (
-          <blockquote
-            key={r.name}
-            className="rounded-xl border border-funnel-border bg-funnel-selected/50 px-4 py-3 text-left text-sm text-funnel-ink"
-          >
-            <p className="leading-relaxed">&ldquo;{r.quote}&rdquo;</p>
-            <footer className="mt-2 text-xs font-semibold text-funnel-muted">{r.name}</footer>
-          </blockquote>
-        ))}
+
+      <p className="mt-8 max-w-sm text-center text-base font-medium leading-snug text-funnel-ink">
+        Creating your Personalized Learning Plan
+      </p>
+
+      <div className="mt-10 text-center">
+        <p className="text-[1.35rem] font-bold leading-tight text-funnel-primary sm:text-2xl">
+          Over 500&nbsp;000 people
+        </p>
+        <p className="mt-1 text-base font-normal text-funnel-ink">have chosen Ruut</p>
+      </div>
+
+      <div className="mt-10 w-full rounded-2xl bg-neutral-100 px-4 py-4 text-left sm:px-5 sm:py-5">
+        <div className="flex gap-0.5 text-amber-500" aria-hidden>
+          {"★★★★★".split("").map((s, i) => (
+            <span key={i} className="text-lg leading-none">
+              {s}
+            </span>
+          ))}
+        </div>
+        <p className="mt-2 text-base font-bold text-funnel-ink">This plan returned my spark back</p>
+        <p className="mt-2 text-sm leading-relaxed text-funnel-ink/90">
+          I wake up feeling refreshed, focused, and like myself again. People keep saying I look more alive, and honestly,
+          I feel it too.
+        </p>
       </div>
     </div>
   );
@@ -159,9 +188,11 @@ export function OnboardingWizard() {
   const [submitState, setSubmitState] = useState<"idle" | "submitting" | "error">("idle");
   const [submitError, setSubmitError] = useState<string>("");
   const [emailSent, setEmailSent] = useState(false);
+  const [emailFieldError, setEmailFieldError] = useState<"required" | "invalid" | null>(null);
 
   const nextDisabled = !canProceed(stepId, a);
-  const hint = nextDisabled ? validationHint(stepId) : null;
+  const floatingCtaDisabled =
+    stepId === "email" ? submitState === "submitting" : nextDisabled || submitState === "submitting";
   const summary = isSummaryStep(stepId);
   const multi = isMultiSelectStep(stepId);
   const singleSelect = isSingleSelectStep(stepId, a);
@@ -173,11 +204,24 @@ export function OnboardingWizard() {
     return () => window.clearTimeout(t);
   }, [stepId, dispatch]);
 
+  useEffect(() => {
+    if (stepId !== "email") setEmailFieldError(null);
+  }, [stepId]);
+
   async function handleContinue() {
     if (stepId === "loading") return;
-    if (!canProceed(stepId, a)) return;
 
     if (stepId === "email") {
+      const raw = a.email.trim();
+      if (raw.length === 0) {
+        setEmailFieldError("required");
+        return;
+      }
+      if (!isValidEmail(raw)) {
+        setEmailFieldError("invalid");
+        return;
+      }
+      setEmailFieldError(null);
       try {
         setSubmitState("submitting");
         setSubmitError("");
@@ -199,6 +243,7 @@ export function OnboardingWizard() {
       return;
     }
 
+    if (!canProceed(stepId, a)) return;
     dispatch({ type: "next" });
   }
 
@@ -226,7 +271,7 @@ export function OnboardingWizard() {
       case "loading":
         return "Building your plan";
       case "email":
-        return "Where should we send your plan?";
+        return "";
       default:
         return "";
     }
@@ -259,8 +304,6 @@ export function OnboardingWizard() {
             <span className="text-funnel-muted"> to match how you learn best.</span>
           </p>
         );
-      case "email":
-        return "We’ll email your next steps—no spam.";
       default:
         return undefined;
     }
@@ -281,7 +324,7 @@ export function OnboardingWizard() {
       titleForStep()
     );
 
-  const shellSubtitle = stepId === "summaryMap" ? undefined : subtitleForStep();
+  const shellSubtitle = stepId === "summaryMap" || stepId === "email" ? undefined : subtitleForStep();
 
   if (emailSent) {
     return (
@@ -330,14 +373,10 @@ export function OnboardingWizard() {
 
         <QuestionShell
           stepKey={stepId}
-          align={summary || multi ? "center" : "start"}
+          align={summary || multi || stepId === "loading" ? "center" : "start"}
           title={shellTitle}
           subtitle={shellSubtitle}
-          footer={
-            stepId === "loading" ? (
-              <p className="text-center text-xs text-funnel-muted">This only takes a few seconds…</p>
-            ) : undefined
-          }
+          hideTitleArea={stepId === "loading" || stepId === "email"}
         >
           {stepId === "language" ? (
             <div className="space-y-4">
@@ -455,13 +494,57 @@ export function OnboardingWizard() {
           {stepId === "loading" ? <LoadingStep /> : null}
 
           {stepId === "email" ? (
-            <TextInput
-              autoFocus
-              type="email"
-              value={a.email}
-              placeholder="you@example.com"
-              onChange={(v) => dispatch({ type: "answer", key: "email", value: clampText(v, 120) })}
-            />
+            <div className="w-full max-w-lg space-y-4">
+              <h2 className="text-pretty text-left text-2xl font-bold leading-tight tracking-tight text-funnel-ink sm:text-[1.65rem]">
+                Enter your email to get your personalized{" "}
+                <span className="font-bold text-funnel-primary">Language Learning Plan</span>
+              </h2>
+              <div className="pt-2">
+                <TextInput
+                  autoFocus
+                  type="email"
+                  value={a.email}
+                  placeholder="Email"
+                  invalid={emailFieldError !== null}
+                  onChange={(v) => {
+                    setEmailFieldError(null);
+                    dispatch({ type: "answer", key: "email", value: clampText(v, 120) });
+                  }}
+                />
+                {emailFieldError === "required" ? (
+                  <p className="mt-2 text-sm font-medium text-red-600" role="alert">
+                    Email is required
+                  </p>
+                ) : null}
+                {emailFieldError === "invalid" ? (
+                  <p className="mt-2 text-sm font-medium text-red-600" role="alert">
+                    Invalid email address
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex gap-2.5 pt-1 text-left text-sm leading-relaxed text-funnel-muted">
+                <svg
+                  className="mt-0.5 h-5 w-5 shrink-0 text-funnel-primary"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3A5.25 5.25 0 0012 1.5zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <p>
+                  We respect your privacy and are committed to protecting your personal data. Your data will be
+                  processed in accordance with our{" "}
+                  <a href="#" className="font-medium text-funnel-ink underline underline-offset-2">
+                    Privacy Policy
+                  </a>
+                  .
+                </p>
+              </div>
+            </div>
           ) : null}
         </QuestionShell>
       </div>
@@ -469,13 +552,12 @@ export function OnboardingWizard() {
       {showFloatingContinue ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center bg-gradient-to-t from-funnel-canvas from-40% to-transparent pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-12">
           <div className="pointer-events-auto w-full max-w-lg px-4">
-            {hint ? <p className="mb-2 text-center text-xs text-funnel-muted">{hint}</p> : null}
             {submitState === "error" ? (
               <p className="mb-2 text-center text-xs text-red-600">{submitError || "Something went wrong."}</p>
             ) : null}
             <PrimaryButton
               onClick={handleContinue}
-              disabled={nextDisabled || submitState === "submitting"}
+              disabled={floatingCtaDisabled}
               className="w-full shadow-md"
             >
               {submitState === "submitting" && stepId === "email" ? "Sending…" : primaryCta}

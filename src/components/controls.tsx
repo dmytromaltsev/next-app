@@ -59,13 +59,21 @@ export function TextInput({
   placeholder,
   autoFocus,
   type = "text",
+  invalid,
+  className,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
   type?: React.HTMLInputTypeAttribute;
+  /** When true, show error border (e.g. after failed validation). */
+  invalid?: boolean;
+  className?: string;
 }) {
+  const borderRing = invalid
+    ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/25"
+    : "border-funnel-border focus:border-funnel-primary focus:ring-2 focus:ring-funnel-primary/20";
   return (
     <input
       value={value}
@@ -73,7 +81,14 @@ export function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       autoFocus={autoFocus}
-      className="h-12 w-full min-h-12 rounded-xl border border-funnel-border bg-funnel-surface px-4 text-base text-funnel-ink outline-none placeholder:text-funnel-muted focus:border-funnel-primary focus:ring-2 focus:ring-funnel-primary/20"
+      aria-invalid={invalid || undefined}
+      className={[
+        "h-14 w-full min-h-14 rounded-2xl border bg-funnel-surface px-4 text-base text-funnel-ink outline-none placeholder:text-funnel-muted",
+        borderRing,
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
     />
   );
 }
