@@ -13,9 +13,10 @@ import {
   PrimaryButton,
   TextInput,
 } from "@/components/controls";
+import { OtherLanguageSelect } from "@/components/OtherLanguageSelect";
 import { QuestionShell } from "@/components/QuestionShell";
 import { SegmentedProgressBar } from "@/components/SegmentedProgressBar";
-import { ageLabelForStats, languageLabel } from "@/lib/onboarding/copy";
+import { ageLabelForStats, resolvedLanguageDisplay } from "@/lib/onboarding/copy";
 import { useOnboarding } from "@/lib/onboarding/store";
 import {
   questionProgressForStep,
@@ -65,7 +66,8 @@ function isMultiSelectStep(stepId: OnboardingStepId) {
 }
 
 /** Single-choice steps: tap an option to continue (no Continue button). */
-function isSingleSelectStep(stepId: OnboardingStepId) {
+function isSingleSelectStep(stepId: OnboardingStepId, a: OnboardingAnswers) {
+  if (stepId === "language" && a.languageOther) return false;
   return (
     stepId === "language" ||
     stepId === "age" ||
@@ -86,7 +88,7 @@ function clampText(s: string, maxLen: number) {
 function canProceed(stepId: OnboardingStepId, a: OnboardingAnswers) {
   switch (stepId) {
     case "language":
-      return a.language !== null;
+      return a.language !== null || Boolean(a.languageOther);
     case "age":
       return a.age !== null;
     case "level":
@@ -183,7 +185,7 @@ export function OnboardingWizard() {
   const hint = nextDisabled ? validationHint(stepId) : null;
   const summary = isSummaryStep(stepId);
   const multi = isMultiSelectStep(stepId);
-  const singleSelect = isSingleSelectStep(stepId);
+  const singleSelect = isSingleSelectStep(stepId, a);
   const showFloatingContinue = stepId !== "loading" && !singleSelect;
 
   useEffect(() => {
@@ -228,7 +230,7 @@ export function OnboardingWizard() {
       case "age":
         return "What is your age?";
       case "level":
-        return `What's your ${languageLabel(a.language)} language level?`;
+        return `What's your ${resolvedLanguageDisplay(a)} language level?`;
       case "summaryMap":
         return "You've come to the right place!";
       case "goals":
@@ -273,7 +275,7 @@ export function OnboardingWizard() {
             <span className="text-funnel-muted">176,372 people aged </span>
             <strong className="font-bold text-funnel-accent">{ageLabelForStats(a.age)}</strong>
             <span className="text-funnel-muted"> are already improving their </span>
-            <strong className="font-bold text-funnel-accent">{languageLabel(a.language)}</strong>
+            <strong className="font-bold text-funnel-accent">{resolvedLanguageDisplay(a)}</strong>
             <span className="text-funnel-muted">
               {" "}
               skills with us—but this journey is <strong className="font-bold text-funnel-accent">all about you</strong>.
@@ -368,11 +370,28 @@ export function OnboardingWizard() {
           }
         >
           {stepId === "language" ? (
-            <LanguageChoiceGrid
-              value={a.language}
-              onChange={(v) => dispatch({ type: "answerAndNext", key: "language", value: v })}
-              options={LANGUAGE_OPTIONS}
-            />
+            <div className="space-y-4">
+              <LanguageChoiceGrid
+                value={a.language}
+                onChange={(v) => dispatch({ type: "answerAndNext", key: "language", value: v })}
+                options={LANGUAGE_OPTIONS}
+              />
+              <OtherLanguageSelect
+                value={a.languageOther}
+                onChange={(v) => dispatch({ type: "answer", key: "languageOther", value: v })}
+              />
+              <p className="text-center text-[11px] leading-relaxed text-funnel-muted">
+                By selecting a language and continuing, you agree to our{" "}
+                <a href="#" className="font-semibold text-funnel-ink underline underline-offset-2">
+                  Terms of Use
+                </a>{" "}
+                and{" "}
+                <a href="#" className="font-semibold text-funnel-ink underline underline-offset-2">
+                  Privacy Policy
+                </a>
+                .
+              </p>
+            </div>
           ) : null}
 
           {stepId === "age" ? (

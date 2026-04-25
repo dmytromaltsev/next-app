@@ -1,4 +1,7 @@
-import type { AgeBracket, TargetLanguage } from "./types";
+import { OTHER_LANGUAGES } from "./otherLanguages";
+import type { AgeBracket, OnboardingAnswers, TargetLanguage } from "./types";
+
+const OTHER_LABEL = Object.fromEntries(OTHER_LANGUAGES.map((o) => [o.value, o.label])) as Record<string, string>;
 
 const LANGUAGE_LABEL: Record<TargetLanguage, string> = {
   english: "English",
@@ -15,6 +18,13 @@ const LANGUAGE_LABEL: Record<TargetLanguage, string> = {
 export function languageLabel(lang: TargetLanguage | null): string {
   if (!lang) return "your chosen";
   return LANGUAGE_LABEL[lang];
+}
+
+/** Display name for personalization (grid language or “Other languages” pick). */
+export function resolvedLanguageDisplay(a: Pick<OnboardingAnswers, "language" | "languageOther">): string {
+  if (a.language) return LANGUAGE_LABEL[a.language];
+  if (a.languageOther) return OTHER_LABEL[a.languageOther] ?? a.languageOther;
+  return "your chosen";
 }
 
 const AGE_LABEL: Record<AgeBracket, string> = {

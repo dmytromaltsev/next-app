@@ -8,6 +8,7 @@ const TOTAL_STEPS = stepOrder.length;
 
 const initialAnswers: OnboardingAnswers = {
   language: null,
+  languageOther: null,
   age: null,
   level: null,
   goals: [],
@@ -37,7 +38,18 @@ function reducer(state: OnboardingState, action: OnboardingAction): OnboardingSt
       return { ...state, stepIndex: clampStep(state.stepIndex + 1) };
     case "back":
       return { ...state, stepIndex: clampStep(state.stepIndex - 1) };
-    case "answer":
+    case "answer": {
+      if (action.key === "languageOther") {
+        const v = action.value as string | null;
+        return {
+          ...state,
+          answers: {
+            ...state.answers,
+            languageOther: v,
+            language: v ? null : state.answers.language,
+          },
+        };
+      }
       return {
         ...state,
         answers: {
@@ -45,14 +57,20 @@ function reducer(state: OnboardingState, action: OnboardingAction): OnboardingSt
           [action.key]: action.value,
         },
       };
-    case "answerAndNext":
+    }
+    case "answerAndNext": {
+      const nextAnswers = {
+        ...state.answers,
+        [action.key]: action.value,
+      } as OnboardingAnswers;
+      if (action.key === "language") {
+        nextAnswers.languageOther = null;
+      }
       return {
         stepIndex: clampStep(state.stepIndex + 1),
-        answers: {
-          ...state.answers,
-          [action.key]: action.value,
-        },
+        answers: nextAnswers,
       };
+    }
     case "reset":
       return initialState;
     default:

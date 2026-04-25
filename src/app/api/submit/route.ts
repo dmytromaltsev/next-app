@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolvedLanguageDisplay } from "@/lib/onboarding/copy";
 import type { OnboardingAnswers } from "@/lib/onboarding/types";
 
 function requiredEnv(name: string) {
@@ -11,7 +12,7 @@ function formatTelegramMessage(a: OnboardingAnswers) {
   const lines = [
     "🌍 New language funnel submission",
     "",
-    `Language: ${a.language ?? "-"}`,
+    `Language: ${resolvedLanguageDisplay(a)}`,
     `Age: ${a.age ?? "-"}`,
     `Level: ${a.level ?? "-"}`,
     `Goals: ${a.goals.length ? a.goals.join(", ") : "-"}`,
@@ -41,6 +42,7 @@ export async function POST(req: Request) {
     const b = body.answers;
     const answers: OnboardingAnswers = {
       language: (b.language ?? null) as OnboardingAnswers["language"],
+      languageOther: typeof b.languageOther === "string" ? b.languageOther : null,
       age: (b.age ?? null) as OnboardingAnswers["age"],
       level: (b.level ?? null) as OnboardingAnswers["level"],
       goals: Array.isArray(b.goals) ? (b.goals as OnboardingAnswers["goals"]) : [],

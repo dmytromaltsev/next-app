@@ -36,6 +36,8 @@ export type BobAnswer = "yes" | "no";
 
 export type OnboardingAnswers = {
   language: TargetLanguage | null;
+  /** Picked from “Other languages” list; `language` stays null when this is set. */
+  languageOther: string | null;
   age: AgeBracket | null;
   level: LanguageLevel | null;
   goals: GoalId[];
