@@ -114,7 +114,7 @@ export function RadioList({
 }: {
   value: string;
   onChange: (v: string) => void;
-  options: Array<{ value: string; label: string; hint?: string }>;
+  options: Array<{ value: string; label: string; hint?: string; prefix?: React.ReactNode }>;
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -126,13 +126,16 @@ export function RadioList({
             type="button"
             onClick={() => onChange(opt.value)}
             className={[
-              "flex min-h-[56px] w-full touch-manipulation items-center justify-between gap-4 rounded-xl border bg-funnel-surface px-4 py-3.5 text-left transition active:scale-[0.99]",
+              "flex min-h-[56px] w-full touch-manipulation items-center justify-between gap-3 rounded-xl border bg-funnel-surface px-4 py-3.5 text-left transition active:scale-[0.99] sm:gap-4",
               selected ? "border-funnel-primary bg-funnel-selected" : "border-funnel-border hover:border-funnel-muted/50",
             ].join(" ")}
           >
-            <div className="min-w-0 flex-1">
-              <div className="text-base font-bold text-funnel-ink">{opt.label}</div>
-              {opt.hint ? <div className="mt-0.5 text-sm font-normal text-funnel-muted">{opt.hint}</div> : null}
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              {opt.prefix ? <span className="shrink-0">{opt.prefix}</span> : null}
+              <div className="min-w-0 flex-1">
+                <div className="text-base font-bold text-funnel-ink">{opt.label}</div>
+                {opt.hint ? <div className="mt-0.5 text-sm font-normal text-funnel-muted">{opt.hint}</div> : null}
+              </div>
             </div>
             <RadioCircle selected={selected} />
           </button>
@@ -149,7 +152,7 @@ export function ChoiceGrid({
 }: {
   value: string;
   onChange: (v: string) => void;
-  options: Array<{ value: string; label: string; hint?: string }>;
+  options: Array<{ value: string; label: string; hint?: string; prefix?: React.ReactNode }>;
 }) {
   return <RadioList value={value} onChange={onChange} options={options} />;
 }

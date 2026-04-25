@@ -47,6 +47,19 @@ const LANGUAGE_OPTIONS: Array<{
   { value: "chinese", label: "Chinese", flag: "🇨🇳" },
 ];
 
+const LEVEL_SCALE_STEPS = 5;
+
+function LevelScaleBadge({ step }: { step: number }) {
+  return (
+    <span
+      className="flex h-10 min-w-[2.75rem] items-center justify-center rounded-lg border border-funnel-primary/30 bg-funnel-selected px-2 text-[11px] font-bold tabular-nums tracking-tight text-funnel-primary sm:min-w-[3rem] sm:text-xs"
+      aria-hidden
+    >
+      {step}/{LEVEL_SCALE_STEPS}
+    </span>
+  );
+}
+
 function headerTitle(stepId: OnboardingStepId): string {
   if (stepId === "loading" || stepId === "email") return "Ruut";
   if (stepId === "goals" || stepId === "learningStyle" || stepId === "struggles") return "Your plan";
@@ -423,11 +436,11 @@ export function OnboardingWizard() {
               value={a.level ?? ""}
               onChange={(v) => dispatch({ type: "answerAndNext", key: "level", value: v as OnboardingAnswers["level"] })}
               options={[
-                { value: "elementary", label: "Elementary" },
-                { value: "beginner", label: "Beginner" },
-                { value: "pre_intermediate", label: "Pre-Intermediate" },
-                { value: "upper_intermediate", label: "Upper-Intermediate" },
-                { value: "advanced", label: "Advanced" },
+                { value: "elementary", label: "Elementary", prefix: <LevelScaleBadge step={1} /> },
+                { value: "beginner", label: "Beginner", prefix: <LevelScaleBadge step={2} /> },
+                { value: "pre_intermediate", label: "Pre-Intermediate", prefix: <LevelScaleBadge step={3} /> },
+                { value: "upper_intermediate", label: "Upper-Intermediate", prefix: <LevelScaleBadge step={4} /> },
+                { value: "advanced", label: "Advanced", prefix: <LevelScaleBadge step={5} /> },
               ]}
             />
           ) : null}
