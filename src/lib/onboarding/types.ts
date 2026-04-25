@@ -123,4 +123,9 @@ export type OnboardingAction =
       key: keyof OnboardingAnswers;
       value: OnboardingAnswers[keyof OnboardingAnswers];
     }
+  | {
+      type: "answerAndNext";
+      key: keyof OnboardingAnswers;
+      value: OnboardingAnswers[keyof OnboardingAnswers];
+    }
   | { type: "reset" };

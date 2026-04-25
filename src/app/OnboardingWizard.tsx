@@ -64,6 +64,19 @@ function isMultiSelectStep(stepId: OnboardingStepId) {
   return stepId === "goals" || stepId === "learningStyle" || stepId === "struggles";
 }
 
+/** Single-choice steps: tap an option to continue (no Continue button). */
+function isSingleSelectStep(stepId: OnboardingStepId) {
+  return (
+    stepId === "language" ||
+    stepId === "age" ||
+    stepId === "level" ||
+    stepId === "dailyStudy" ||
+    stepId === "studyTimeOfDay" ||
+    stepId === "priorExperience" ||
+    stepId === "bobHeard"
+  );
+}
+
 function clampText(s: string, maxLen: number) {
   const t = s.trim();
   if (t.length <= maxLen) return t;
@@ -170,6 +183,8 @@ export function OnboardingWizard() {
   const hint = nextDisabled ? validationHint(stepId) : null;
   const summary = isSummaryStep(stepId);
   const multi = isMultiSelectStep(stepId);
+  const singleSelect = isSingleSelectStep(stepId);
+  const showFloatingContinue = stepId !== "loading" && !singleSelect;
 
   useEffect(() => {
     if (stepId !== "loading") return;
@@ -329,7 +344,12 @@ export function OnboardingWizard() {
         backDisabled={state.stepIndex === 0}
       />
 
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pb-36 pt-5">
+      <div
+        className={[
+          "mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-5",
+          showFloatingContinue ? "pb-28 sm:pb-32" : "pb-8",
+        ].join(" ")}
+      >
         {showProgress && progress ? (
           <div className="mb-6">
             <SegmentedProgressBar value={progress.current} max={progress.total} />
@@ -350,7 +370,7 @@ export function OnboardingWizard() {
           {stepId === "language" ? (
             <LanguageChoiceGrid
               value={a.language}
-              onChange={(v) => dispatch({ type: "answer", key: "language", value: v })}
+              onChange={(v) => dispatch({ type: "answerAndNext", key: "language", value: v })}
               options={LANGUAGE_OPTIONS}
             />
           ) : null}
@@ -358,7 +378,7 @@ export function OnboardingWizard() {
           {stepId === "age" ? (
             <ChoiceGrid
               value={a.age ?? ""}
-              onChange={(v) => dispatch({ type: "answer", key: "age", value: v as OnboardingAnswers["age"] })}
+              onChange={(v) => dispatch({ type: "answerAndNext", key: "age", value: v as OnboardingAnswers["age"] })}
               options={[
                 { value: "18-24", label: "18–24" },
                 { value: "25-34", label: "25–34" },
@@ -373,7 +393,7 @@ export function OnboardingWizard() {
           {stepId === "level" ? (
             <ChoiceGrid
               value={a.level ?? ""}
-              onChange={(v) => dispatch({ type: "answer", key: "level", value: v as OnboardingAnswers["level"] })}
+              onChange={(v) => dispatch({ type: "answerAndNext", key: "level", value: v as OnboardingAnswers["level"] })}
               options={[
                 { value: "beginner", label: "Beginner", hint: "New or very little exposure" },
                 { value: "elementary", label: "Elementary", hint: "Basics, simple conversations" },
@@ -408,7 +428,7 @@ export function OnboardingWizard() {
             <ChoiceGrid
               value={a.dailyStudy ?? ""}
               onChange={(v) =>
-                dispatch({ type: "answer", key: "dailyStudy", value: v as OnboardingAnswers["dailyStudy"] })
+                dispatch({ type: "answerAndNext", key: "dailyStudy", value: v as OnboardingAnswers["dailyStudy"] })
               }
               options={[
                 { value: "5", label: "About 5 minutes" },
@@ -423,7 +443,11 @@ export function OnboardingWizard() {
             <ChoiceGrid
               value={a.studyTimeOfDay ?? ""}
               onChange={(v) =>
-                dispatch({ type: "answer", key: "studyTimeOfDay", value: v as OnboardingAnswers["studyTimeOfDay"] })
+                dispatch({
+                  type: "answerAndNext",
+                  key: "studyTimeOfDay",
+                  value: v as OnboardingAnswers["studyTimeOfDay"],
+                })
               }
               options={[
                 { value: "morning", label: "Morning" },
@@ -438,7 +462,11 @@ export function OnboardingWizard() {
             <ChoiceGrid
               value={a.priorExperience ?? ""}
               onChange={(v) =>
-                dispatch({ type: "answer", key: "priorExperience", value: v as OnboardingAnswers["priorExperience"] })
+                dispatch({
+                  type: "answerAndNext",
+                  key: "priorExperience",
+                  value: v as OnboardingAnswers["priorExperience"],
+                })
               }
               options={[
                 { value: "never", label: "Not really", hint: "This is my first serious try" },
@@ -478,7 +506,7 @@ export function OnboardingWizard() {
           {stepId === "bobHeard" ? (
             <ChoiceGrid
               value={a.bob ?? ""}
-              onChange={(v) => dispatch({ type: "answer", key: "bob", value: v as OnboardingAnswers["bob"] })}
+              onChange={(v) => dispatch({ type: "answerAndNext", key: "bob", value: v as OnboardingAnswers["bob"] })}
               options={[
                 { value: "yes", label: "Yes" },
                 { value: "no", label: "No" },
@@ -500,9 +528,9 @@ export function OnboardingWizard() {
         </QuestionShell>
       </div>
 
-      {stepId !== "loading" ? (
-        <footer className="fixed bottom-0 left-0 right-0 z-20 border-t border-funnel-border bg-funnel-surface pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_24px_rgba(17,24,39,0.06)]">
-          <div className="mx-auto w-full max-w-lg px-4">
+      {showFloatingContinue ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center bg-gradient-to-t from-funnel-canvas from-40% to-transparent pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-12">
+          <div className="pointer-events-auto w-full max-w-lg px-4">
             {hint ? <p className="mb-2 text-center text-xs text-funnel-muted">{hint}</p> : null}
             {submitState === "error" ? (
               <p className="mb-2 text-center text-xs text-red-600">{submitError || "Something went wrong."}</p>
@@ -510,25 +538,12 @@ export function OnboardingWizard() {
             <PrimaryButton
               onClick={handleContinue}
               disabled={nextDisabled || submitState === "submitting"}
-              className="w-full"
+              className="w-full shadow-md"
             >
               {submitState === "submitting" && stepId === "email" ? "Sending…" : primaryCta}
             </PrimaryButton>
-            {!summary && stepId !== "email" ? (
-              <p className="mt-3 text-center text-[11px] leading-relaxed text-funnel-muted">
-                By continuing you agree to our{" "}
-                <a href="#" className="font-semibold text-funnel-ink underline underline-offset-2">
-                  Terms of Use
-                </a>{" "}
-                and{" "}
-                <a href="#" className="font-semibold text-funnel-ink underline underline-offset-2">
-                  Privacy Policy
-                </a>
-                .
-              </p>
-            ) : null}
           </div>
-        </footer>
+        </div>
       ) : null}
     </div>
   );

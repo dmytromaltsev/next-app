@@ -200,7 +200,7 @@ export function LanguageChoiceGrid<T extends string>({
   options: Array<{ value: T; label: string; flag: string }>;
 }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -209,17 +209,19 @@ export function LanguageChoiceGrid<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={[
-              "flex min-h-[56px] w-full touch-manipulation items-center justify-between gap-4 rounded-xl border bg-funnel-surface px-4 py-3.5 text-left transition active:scale-[0.99]",
+              "relative flex min-h-[5.5rem] touch-manipulation flex-col items-center justify-center gap-1 rounded-xl border bg-funnel-surface px-2 py-3 pt-7 text-center transition active:scale-[0.99] sm:min-h-[6rem]",
               selected ? "border-funnel-primary bg-funnel-selected" : "border-funnel-border hover:border-funnel-muted/50",
             ].join(" ")}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="text-2xl leading-none" aria-hidden>
-                {opt.flag}
-              </span>
-              <span className="text-base font-bold text-funnel-ink">{opt.label}</span>
-            </div>
-            <RadioCircle selected={selected} />
+            <span className="absolute right-2 top-2" aria-hidden>
+              <RadioCircle selected={selected} />
+            </span>
+            <span className="text-2xl leading-none sm:text-[1.75rem]" aria-hidden>
+              {opt.flag}
+            </span>
+            <span className="line-clamp-2 text-center text-[11px] font-bold leading-tight text-funnel-ink sm:text-xs">
+              {opt.label}
+            </span>
           </button>
         );
       })}

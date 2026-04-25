@@ -45,6 +45,14 @@ function reducer(state: OnboardingState, action: OnboardingAction): OnboardingSt
           [action.key]: action.value,
         },
       };
+    case "answerAndNext":
+      return {
+        stepIndex: clampStep(state.stepIndex + 1),
+        answers: {
+          ...state.answers,
+          [action.key]: action.value,
+        },
+      };
     case "reset":
       return initialState;
     default:
