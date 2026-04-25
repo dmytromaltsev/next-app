@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolvedLanguageDisplay } from "@/lib/onboarding/copy";
+import { languageLevelLabel, resolvedLanguageDisplay } from "@/lib/onboarding/copy";
 import type { OnboardingAnswers } from "@/lib/onboarding/types";
 
 function requiredEnv(name: string) {
@@ -14,7 +14,7 @@ function formatTelegramMessage(a: OnboardingAnswers) {
     "",
     `Language: ${resolvedLanguageDisplay(a)}`,
     `Age: ${a.age ?? "-"}`,
-    `Level: ${a.level ?? "-"}`,
+    `Level: ${languageLevelLabel(a.level)}`,
     `Goals: ${a.goals.length ? a.goals.join(", ") : "-"}`,
     `Learning style: ${a.learningStyle.length ? a.learningStyle.join(", ") : "-"}`,
     `Struggles: ${a.struggles.length ? a.struggles.join(", ") : "-"}`,

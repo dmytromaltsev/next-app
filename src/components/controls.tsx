@@ -157,18 +157,24 @@ export function MultiChoiceGrid<T extends string>({
   values,
   onChange,
   options,
+  columns = 1,
 }: {
   values: T[];
   onChange: (v: T[]) => void;
   options: Array<{ value: T; label: string }>;
+  /** `2` = two-column grid (e.g. goals step). */
+  columns?: 1 | 2;
 }) {
   function toggle(val: T) {
     if (values.includes(val)) onChange(values.filter((x) => x !== val));
     else onChange([...values, val]);
   }
 
+  const layoutClass =
+    columns === 2 ? "grid grid-cols-2 gap-2.5 sm:gap-3" : "flex flex-col gap-3";
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className={layoutClass}>
       {options.map((opt) => {
         const selected = values.includes(opt.value);
         return (
@@ -177,11 +183,13 @@ export function MultiChoiceGrid<T extends string>({
             type="button"
             onClick={() => toggle(opt.value)}
             className={[
-              "flex min-h-[56px] w-full touch-manipulation items-center justify-between gap-4 rounded-xl border bg-funnel-surface px-4 py-3.5 text-left transition active:scale-[0.99]",
+              "flex min-h-[56px] w-full min-w-0 touch-manipulation items-center justify-between gap-2 rounded-xl border bg-funnel-surface px-3 py-3 text-left transition active:scale-[0.99] sm:min-h-[60px] sm:gap-3 sm:px-4 sm:py-3.5",
               selected ? "border-funnel-primary bg-funnel-selected" : "border-funnel-border hover:border-funnel-muted/50",
             ].join(" ")}
           >
-            <span className="min-w-0 flex-1 text-base font-semibold text-funnel-ink">{opt.label}</span>
+            <span className="min-w-0 flex-1 text-sm font-semibold leading-snug text-funnel-ink sm:text-base">
+              {opt.label}
+            </span>
             <CheckboxBox selected={selected} />
           </button>
         );

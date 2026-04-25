@@ -210,8 +210,6 @@ export function OnboardingWizard() {
         return "What is your age?";
       case "level":
         return `What's your ${resolvedLanguageDisplay(a)} level?`;
-      case "summaryMap":
-        return "You've come to the right place!";
       case "goals":
         return "What goals do you have?";
       case "summaryLadder":
@@ -242,19 +240,6 @@ export function OnboardingWizard() {
       case "learningStyle":
       case "struggles":
         return "Select all that apply.";
-      case "summaryMap":
-        return (
-          <p className="text-base leading-relaxed">
-            <span className="text-funnel-muted">176,372 people aged </span>
-            <strong className="font-bold text-funnel-accent">{ageLabelForStats(a.age)}</strong>
-            <span className="text-funnel-muted"> are already improving their </span>
-            <strong className="font-bold text-funnel-accent">{resolvedLanguageDisplay(a)}</strong>
-            <span className="text-funnel-muted">
-              {" "}
-              skills with us—but this journey is <strong className="font-bold text-funnel-accent">all about you</strong>.
-            </span>
-          </p>
-        );
       case "summaryLadder":
         return (
           <p className="text-base leading-relaxed">
@@ -282,6 +267,21 @@ export function OnboardingWizard() {
   };
 
   const primaryCta = "Continue";
+
+  const shellTitle: ReactNode =
+    stepId === "summaryMap" ? (
+      <>
+        <span className="font-normal text-funnel-muted">176,372 people aged </span>
+        <strong className="font-bold text-funnel-accent">{ageLabelForStats(a.age)}</strong>
+        <span className="font-normal text-funnel-muted"> are already improving their </span>
+        <strong className="font-bold text-funnel-accent">{resolvedLanguageDisplay(a)}</strong>
+        <span className="font-normal text-funnel-muted"> with us.</span>
+      </>
+    ) : (
+      titleForStep()
+    );
+
+  const shellSubtitle = stepId === "summaryMap" ? undefined : subtitleForStep();
 
   if (emailSent) {
     return (
@@ -331,8 +331,8 @@ export function OnboardingWizard() {
         <QuestionShell
           stepKey={stepId}
           align={summary || multi ? "center" : "start"}
-          title={titleForStep()}
-          subtitle={subtitleForStep()}
+          title={shellTitle}
+          subtitle={shellSubtitle}
           footer={
             stepId === "loading" ? (
               <p className="text-center text-xs text-funnel-muted">This only takes a few seconds…</p>
@@ -352,11 +352,11 @@ export function OnboardingWizard() {
               />
               <p className="text-center text-[10px] leading-snug text-funnel-muted italic sm:text-[11px]">
                 By selecting a language and continuing, you agree to our{" "}
-                <a href="#" className="not-italic font-normal text-funnel-muted underline underline-offset-2">
+                <a href="#" className="italic font-normal text-funnel-muted underline underline-offset-2">
                   Terms of Use
                 </a>{" "}
                 and{" "}
-                <a href="#" className="not-italic font-normal text-funnel-muted underline underline-offset-2">
+                <a href="#" className="italic font-normal text-funnel-muted underline underline-offset-2">
                   Privacy Policy
                 </a>
                 .
@@ -384,10 +384,11 @@ export function OnboardingWizard() {
               value={a.level ?? ""}
               onChange={(v) => dispatch({ type: "answerAndNext", key: "level", value: v as OnboardingAnswers["level"] })}
               options={[
+                { value: "elementary", label: "Elementary" },
                 { value: "beginner", label: "Beginner" },
-                { value: "intermediate", label: "Intermediate" },
+                { value: "pre_intermediate", label: "Pre-Intermediate" },
+                { value: "upper_intermediate", label: "Upper-Intermediate" },
                 { value: "advanced", label: "Advanced" },
-                { value: "fluent", label: "Fluent / native-like" },
               ]}
             />
           ) : null}
@@ -396,6 +397,7 @@ export function OnboardingWizard() {
 
           {stepId === "goals" ? (
             <MultiChoiceGrid
+              columns={2}
               values={a.goals}
               onChange={(v) => dispatch({ type: "answer", key: "goals", value: v })}
               options={[

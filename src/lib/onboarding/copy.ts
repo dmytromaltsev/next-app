@@ -1,5 +1,5 @@
 import { OTHER_LANGUAGES } from "./otherLanguages";
-import type { AgeBracket, OnboardingAnswers, TargetLanguage } from "./types";
+import type { AgeBracket, LanguageLevel, OnboardingAnswers, TargetLanguage } from "./types";
 
 const OTHER_LABEL = Object.fromEntries(OTHER_LANGUAGES.map((o) => [o.value, o.label])) as Record<string, string>;
 
@@ -39,4 +39,17 @@ const AGE_LABEL: Record<AgeBracket, string> = {
 export function ageLabelForStats(age: AgeBracket | null): string {
   if (!age) return "your age group";
   return AGE_LABEL[age];
+}
+
+const LEVEL_LABEL: Record<LanguageLevel, string> = {
+  elementary: "Elementary",
+  beginner: "Beginner",
+  pre_intermediate: "Pre-Intermediate",
+  upper_intermediate: "Upper-Intermediate",
+  advanced: "Advanced",
+};
+
+export function languageLevelLabel(level: LanguageLevel | null): string {
+  if (!level) return "-";
+  return LEVEL_LABEL[level];
 }

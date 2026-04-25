@@ -11,7 +11,12 @@ export type TargetLanguage =
 
 export type AgeBracket = "18-24" | "25-34" | "35-44" | "45-54" | "55-64" | "65+";
 
-export type LanguageLevel = "beginner" | "intermediate" | "advanced" | "fluent";
+export type LanguageLevel =
+  | "elementary"
+  | "beginner"
+  | "pre_intermediate"
+  | "upper_intermediate"
+  | "advanced";
 
 export type GoalId =
   | "speak_confidently"
