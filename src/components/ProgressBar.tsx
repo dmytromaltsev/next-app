@@ -12,15 +12,14 @@ export function ProgressBar({
   const pct = max <= 0 ? 0 : Math.max(0, Math.min(1, value / max));
   return (
     <div className="w-full">
-      <div className="h-2 w-full rounded-full bg-zinc-200/80 dark:bg-zinc-800">
+      <div className="h-1.5 w-full rounded-full bg-funnel-track">
         <motion.div
-          className="h-2 rounded-full bg-zinc-900 dark:bg-zinc-100"
+          className="h-1.5 rounded-full bg-funnel-bar"
           initial={false}
           animate={{ width: `${pct * 100}%` }}
-          transition={{ type: "spring", stiffness: 200, damping: 24 }}
+          transition={{ type: "spring", stiffness: 200, damping: 26 }}
         />
       </div>
     </div>
   );
 }
-

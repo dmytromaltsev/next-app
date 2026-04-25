@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Nunito } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
 import { LadderIllustration, WorldMapIllustration } from "@/components/FunnelArt";
 import { ProgressBar } from "@/components/ProgressBar";
@@ -21,6 +22,18 @@ import {
   type OnboardingAnswers,
   type OnboardingStepId,
 } from "@/lib/onboarding/types";
+
+const funnelSans = Nunito({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  display: "swap",
+});
+
+function shellEyebrowBadge(stepId: OnboardingStepId): { eyebrow?: string; badge?: string } {
+  if (stepId === "loading") return {};
+  if (stepId === "email") return { eyebrow: "Almost there" };
+  return { eyebrow: "Language learning plan", badge: "Short quiz" };
+}
 
 const LANGUAGE_OPTIONS: Array<{
   value: NonNullable<OnboardingAnswers["language"]>;
@@ -102,12 +115,12 @@ const REVIEWS = [
 function LoadingStep() {
   return (
     <div className="space-y-8">
-      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">Preparing your personalized plan…</p>
+      <p className="text-center text-sm text-funnel-muted">Preparing your personalized plan…</p>
       <div className="space-y-3">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-2.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+          <div key={i} className="h-2.5 overflow-hidden rounded-full bg-funnel-track">
             <motion.div
-              className="h-full rounded-full bg-zinc-900 dark:bg-zinc-100"
+              className="h-full rounded-full bg-funnel-bar"
               initial={{ width: "0%" }}
               animate={{ width: "100%" }}
               transition={{ delay: i * 0.32, duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
@@ -115,17 +128,15 @@ function LoadingStep() {
           </div>
         ))}
       </div>
-      <div className="space-y-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-        <p className="text-center text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-          Learners like you
-        </p>
+      <div className="space-y-4 border-t border-funnel-border pt-6">
+        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-funnel-muted">Learners like you</p>
         {REVIEWS.map((r) => (
           <blockquote
             key={r.name}
-            className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300"
+            className="rounded-2xl border border-funnel-border bg-funnel-pill px-4 py-3 text-sm text-funnel-ink"
           >
             <p className="leading-relaxed">&ldquo;{r.quote}&rdquo;</p>
-            <footer className="mt-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">{r.name}</footer>
+            <footer className="mt-2 text-xs font-semibold text-funnel-muted">{r.name}</footer>
           </blockquote>
         ))}
       </div>
@@ -236,78 +247,117 @@ export function OnboardingWizard() {
 
   if (emailSent) {
     return (
-      <div className="flex min-h-dvh w-full flex-1 items-center justify-center bg-zinc-50 px-4 py-8 dark:bg-black">
-        <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:rounded-3xl">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">You&apos;re all set</h1>
-          <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-            Check your inbox at <span className="font-medium text-zinc-900 dark:text-zinc-200">{a.email}</span> for next
-            steps.
-          </p>
-          <div className="mt-8">
-            <PrimaryButton
-              onClick={() => {
-                setEmailSent(false);
-                dispatch({ type: "reset" });
-              }}
-              className="w-full sm:w-auto"
-            >
-              Start over
-            </PrimaryButton>
+      <div
+        className={`${funnelSans.className} flex min-h-dvh w-full flex-1 flex-col bg-funnel-canvas text-funnel-ink`}
+      >
+        <header className="flex shrink-0 items-center justify-between px-4 py-4 sm:px-8">
+          <span className="text-lg font-extrabold tracking-tight text-funnel-primary">Learn</span>
+          <a
+            href="#"
+            className="text-xs font-semibold text-funnel-muted underline decoration-funnel-border decoration-2 underline-offset-4 hover:text-funnel-ink"
+          >
+            Docs
+          </a>
+        </header>
+        <div className="flex flex-1 items-center justify-center px-4 pb-12">
+          <div className="w-full max-w-lg rounded-3xl border border-funnel-border bg-funnel-surface p-8 text-center shadow-[0_12px_40px_rgba(20,34,31,0.08)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-funnel-muted">All set</p>
+            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-funnel-ink">You&apos;re all set</h1>
+            <p className="mt-3 text-sm leading-relaxed text-funnel-muted">
+              Check your inbox at <span className="font-semibold text-funnel-ink">{a.email}</span> for next steps.
+            </p>
+            <div className="mt-8">
+              <PrimaryButton
+                onClick={() => {
+                  setEmailSent(false);
+                  dispatch({ type: "reset" });
+                }}
+                className="w-full sm:w-auto"
+              >
+                Start over
+              </PrimaryButton>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="flex min-h-dvh w-full flex-1 justify-center bg-zinc-50 px-3 py-4 pb-8 dark:bg-black sm:px-5 sm:py-8">
-      <div className="flex w-full max-w-lg flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:max-w-xl sm:flex-none sm:rounded-3xl sm:p-8">
-        {showProgress && progress ? (
-          <div className="mb-6 flex items-center gap-3 sm:mb-8">
-            <div className="min-w-0 flex-1">
-              <ProgressBar value={progress.current} max={progress.total} />
-            </div>
-            <div className="shrink-0 tabular-nums text-sm font-medium text-zinc-600 dark:text-zinc-400">
-              {progress.current}/{progress.total}
-            </div>
-          </div>
-        ) : null}
+  const { eyebrow, badge } = shellEyebrowBadge(stepId);
 
-        <QuestionShell
-          stepKey={stepId}
-          title={titleForStep()}
-          subtitle={subtitleForStep()}
-          footer={
-            stepId === "loading" ? (
-              <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">This only takes a few seconds…</p>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <SecondaryButton
-                    onClick={() => dispatch({ type: "back" })}
-                    disabled={state.stepIndex === 0}
-                    className="sm:min-w-[6.5rem]"
-                  >
-                    Back
-                  </SecondaryButton>
-                  <PrimaryButton
-                    onClick={handleContinue}
-                    disabled={nextDisabled || submitState === "submitting"}
-                    className="sm:min-w-[8rem]"
-                  >
-                    {submitState === "submitting" && stepId === "email" ? "Sending…" : "Continue"}
-                  </PrimaryButton>
-                </div>
-                {hint ? <div className="text-center text-xs text-zinc-500 sm:text-left dark:text-zinc-400">{hint}</div> : null}
-                {submitState === "error" ? (
-                  <div className="text-center text-xs text-red-600 sm:text-left dark:text-red-400">
-                    {submitError || "Something went wrong. Please try again."}
-                  </div>
-                ) : null}
-              </div>
-            )
-          }
+  return (
+    <div
+      className={`${funnelSans.className} flex min-h-dvh w-full flex-1 flex-col bg-funnel-canvas text-funnel-ink [color-scheme:light]`}
+    >
+      <header className="flex shrink-0 items-center justify-between px-4 py-4 sm:px-8">
+        <span className="text-lg font-extrabold tracking-tight text-funnel-primary">Learn</span>
+        <a
+          href="#"
+          className="text-xs font-semibold text-funnel-muted underline decoration-funnel-border decoration-2 underline-offset-4 hover:text-funnel-ink"
         >
+          Docs
+        </a>
+      </header>
+
+      <div className="flex flex-1 justify-center px-3 pb-10 pt-1 sm:px-6 sm:pb-14 sm:pt-2">
+        <div className="flex w-full max-w-lg flex-1 flex-col rounded-3xl border border-funnel-border bg-funnel-surface p-5 shadow-[0_12px_40px_rgba(20,34,31,0.07)] sm:max-w-xl sm:flex-none sm:p-9">
+          {showProgress && progress ? (
+            <div className="mb-5 flex items-center gap-3 sm:mb-7">
+              <div className="min-w-0 flex-1">
+                <ProgressBar value={progress.current} max={progress.total} />
+              </div>
+              <div className="shrink-0 tabular-nums text-xs font-bold text-funnel-muted">{progress.current}</div>
+              <div className="shrink-0 text-xs font-bold text-funnel-muted/50">/</div>
+              <div className="shrink-0 tabular-nums text-xs font-bold text-funnel-muted">{progress.total}</div>
+            </div>
+          ) : null}
+
+          <QuestionShell
+            stepKey={stepId}
+            eyebrow={eyebrow}
+            badge={badge}
+            title={titleForStep()}
+            subtitle={subtitleForStep()}
+            footer={
+              stepId === "loading" ? (
+                <p className="text-center text-xs text-funnel-muted">This only takes a few seconds…</p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <SecondaryButton
+                      onClick={() => dispatch({ type: "back" })}
+                      disabled={state.stepIndex === 0}
+                      className="sm:min-w-[6.5rem]"
+                    >
+                      Back
+                    </SecondaryButton>
+                    <PrimaryButton
+                      onClick={handleContinue}
+                      disabled={nextDisabled || submitState === "submitting"}
+                      className="sm:min-w-[8rem]"
+                    >
+                      {submitState === "submitting" && stepId === "email" ? "Sending…" : "Continue"}
+                    </PrimaryButton>
+                  </div>
+                  {hint ? <div className="text-center text-xs text-funnel-muted sm:text-left">{hint}</div> : null}
+                  {submitState === "error" ? (
+                    <div className="text-center text-xs text-red-700 sm:text-left">{submitError || "Something went wrong. Please try again."}</div>
+                  ) : null}
+                  <p className="text-center text-[11px] leading-relaxed text-funnel-muted sm:text-left">
+                    By continuing you agree to our{" "}
+                    <a href="#" className="font-semibold text-funnel-ink underline decoration-funnel-border underline-offset-2">
+                      Terms of Use
+                    </a>{" "}
+                    and{" "}
+                    <a href="#" className="font-semibold text-funnel-ink underline decoration-funnel-border underline-offset-2">
+                      Privacy Policy
+                    </a>
+                    .
+                  </p>
+                </div>
+              )
+            }
+          >
           {stepId === "language" ? (
             <LanguageChoiceGrid
               value={a.language}
@@ -462,7 +512,8 @@ export function OnboardingWizard() {
               onChange={(v) => dispatch({ type: "answer", key: "email", value: clampText(v, 120) })}
             />
           ) : null}
-        </QuestionShell>
+          </QuestionShell>
+        </div>
       </div>
     </div>
   );

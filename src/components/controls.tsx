@@ -2,6 +2,12 @@
 
 import type React from "react";
 
+const btnPrimary =
+  "inline-flex min-h-12 w-full touch-manipulation items-center justify-center rounded-2xl bg-funnel-primary px-6 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99] hover:bg-funnel-primary-hover disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto";
+
+const btnSecondary =
+  "inline-flex min-h-12 w-full touch-manipulation items-center justify-center rounded-2xl border border-funnel-border bg-funnel-surface px-6 text-sm font-semibold text-funnel-ink transition active:scale-[0.99] hover:bg-funnel-canvas disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto";
+
 export function PrimaryButton({
   children,
   onClick,
@@ -16,17 +22,7 @@ export function PrimaryButton({
   className?: string;
 }) {
   return (
-    <button
-      type={type}
-      disabled={disabled}
-      onClick={onClick}
-      className={[
-        "inline-flex min-h-11 w-full touch-manipulation items-center justify-center rounded-full bg-zinc-950 px-5 text-sm font-medium text-white transition active:scale-[0.99] hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
+    <button type={type} disabled={disabled} onClick={onClick} className={[btnPrimary, className].filter(Boolean).join(" ")}>
       {children}
     </button>
   );
@@ -44,17 +40,7 @@ export function SecondaryButton({
   className?: string;
 }) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={[
-        "inline-flex min-h-11 w-full touch-manipulation items-center justify-center rounded-full border border-zinc-200 bg-white px-5 text-sm font-medium text-zinc-900 transition active:scale-[0.99] hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto dark:border-zinc-800 dark:bg-black dark:text-zinc-50 dark:hover:bg-zinc-950",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
+    <button type="button" disabled={disabled} onClick={onClick} className={[btnSecondary, className].filter(Boolean).join(" ")}>
       {children}
     </button>
   );
@@ -80,10 +66,15 @@ export function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       autoFocus={autoFocus}
-      className="h-12 w-full min-h-12 rounded-2xl border border-zinc-200 bg-white px-4 text-base text-zinc-950 outline-none ring-0 placeholder:text-zinc-400 focus:border-zinc-400 dark:border-zinc-800 dark:bg-black dark:text-zinc-50 dark:placeholder:text-zinc-600 dark:focus:border-zinc-600"
+      className="h-12 w-full min-h-12 rounded-2xl border border-funnel-border bg-funnel-surface px-4 text-base text-funnel-ink outline-none ring-0 placeholder:text-funnel-muted/70 focus:border-funnel-bar focus:ring-2 focus:ring-funnel-bar/20"
     />
   );
 }
+
+const cardBase =
+  "touch-manipulation rounded-2xl border px-4 py-3.5 text-left transition active:scale-[0.99]";
+const cardIdle = "border-funnel-border bg-funnel-surface text-funnel-ink shadow-[0_1px_0_rgba(20,34,31,0.04)] hover:border-funnel-muted/40 hover:bg-funnel-canvas/50";
+const cardSelected = "border-funnel-primary bg-funnel-selected text-funnel-ink shadow-[0_2px_8px_rgba(21,53,41,0.08)] ring-1 ring-funnel-primary/15";
 
 export function ChoiceGrid({
   value,
@@ -97,7 +88,7 @@ export function ChoiceGrid({
   columnsClass?: string;
 }) {
   return (
-    <div className={["grid gap-2", columnsClass].join(" ")}>
+    <div className={["grid gap-2.5", columnsClass].join(" ")}>
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -105,23 +96,11 @@ export function ChoiceGrid({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={[
-              "group flex min-h-[3.25rem] touch-manipulation flex-col gap-1 rounded-2xl border px-4 py-3 text-left transition active:scale-[0.99]",
-              selected
-                ? "border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950"
-                : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:text-zinc-50 dark:hover:bg-zinc-950",
-            ].join(" ")}
+            className={[cardBase, "flex min-h-[3.25rem] flex-col gap-0.5", selected ? cardSelected : cardIdle].join(" ")}
           >
-            <span className="text-sm font-medium">{opt.label}</span>
+            <span className="text-sm font-semibold">{opt.label}</span>
             {opt.hint ? (
-              <span
-                className={[
-                  "text-xs leading-5",
-                  selected
-                    ? "text-white/80 dark:text-zinc-700"
-                    : "text-zinc-500 dark:text-zinc-400",
-                ].join(" ")}
-              >
+              <span className={["text-xs leading-5", selected ? "text-funnel-muted" : "text-funnel-muted/90"].join(" ")}>
                 {opt.hint}
               </span>
             ) : null}
@@ -147,7 +126,7 @@ export function MultiChoiceGrid<T extends string>({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-2">
+    <div className="grid grid-cols-1 gap-2.5">
       {options.map((opt) => {
         const selected = values.includes(opt.value);
         return (
@@ -156,18 +135,17 @@ export function MultiChoiceGrid<T extends string>({
             type="button"
             onClick={() => toggle(opt.value)}
             className={[
-              "flex min-h-[3.25rem] touch-manipulation items-center rounded-2xl border px-4 py-3 text-left text-sm font-medium transition active:scale-[0.99]",
-              selected
-                ? "border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950"
-                : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:text-zinc-50 dark:hover:bg-zinc-950",
+              cardBase,
+              "flex min-h-[3.25rem] items-center text-sm font-semibold",
+              selected ? cardSelected : cardIdle,
             ].join(" ")}
           >
             <span
               className={[
-                "mr-3 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px]",
+                "mr-3 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-bold",
                 selected
-                  ? "border-white/30 bg-white/10 dark:border-zinc-900/30 dark:bg-zinc-900/10"
-                  : "border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900",
+                  ? "border-funnel-primary/40 bg-funnel-primary text-white"
+                  : "border-funnel-border bg-funnel-surface text-transparent",
               ].join(" ")}
               aria-hidden
             >
@@ -191,7 +169,7 @@ export function LanguageChoiceGrid<T extends string>({
   options: Array<{ value: T; label: string; flag: string }>;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -200,16 +178,14 @@ export function LanguageChoiceGrid<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={[
-              "flex min-h-[3.5rem] touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-3 text-center transition active:scale-[0.99]",
-              selected
-                ? "border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950"
-                : "border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-black dark:text-zinc-50 dark:hover:bg-zinc-950",
+              "flex min-h-[4rem] touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-3 text-center transition active:scale-[0.99]",
+              selected ? cardSelected : cardIdle,
             ].join(" ")}
           >
             <span className="text-2xl leading-none" aria-hidden>
               {opt.flag}
             </span>
-            <span className="text-xs font-medium leading-tight">{opt.label}</span>
+            <span className="text-[11px] font-semibold leading-tight text-funnel-ink">{opt.label}</span>
           </button>
         );
       })}
