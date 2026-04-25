@@ -11,7 +11,7 @@ export type TargetLanguage =
 
 export type AgeBracket = "18-24" | "25-34" | "35-44" | "45-54" | "55-64" | "65+";
 
-export type LanguageLevel = "beginner" | "elementary" | "intermediate" | "advanced" | "fluent";
+export type LanguageLevel = "beginner" | "intermediate" | "advanced" | "fluent";
 
 export type GoalId =
   | "speak_confidently"
@@ -26,12 +26,6 @@ export type LearningStyleId = "practice" | "visual" | "listening" | "reading_wri
 
 export type StruggleId = "too_old" | "takes_too_long" | "failed_before" | "distracted";
 
-export type DailyStudy = "5" | "10" | "15" | "20plus";
-
-export type StudyTimeOfDay = "morning" | "afternoon" | "evening" | "late";
-
-export type PriorExperience = "never" | "some" | "fluent_other";
-
 export type BobAnswer = "yes" | "no";
 
 export type OnboardingAnswers = {
@@ -41,9 +35,6 @@ export type OnboardingAnswers = {
   age: AgeBracket | null;
   level: LanguageLevel | null;
   goals: GoalId[];
-  dailyStudy: DailyStudy | null;
-  studyTimeOfDay: StudyTimeOfDay | null;
-  priorExperience: PriorExperience | null;
   learningStyle: LearningStyleId[];
   struggles: StruggleId[];
   bob: BobAnswer | null;
@@ -57,9 +48,6 @@ export type OnboardingStepId =
   | "summaryMap"
   | "goals"
   | "summaryLadder"
-  | "dailyStudy"
-  | "studyTimeOfDay"
-  | "priorExperience"
   | "learningStyle"
   | "struggles"
   | "summaryThanksA"
@@ -68,23 +56,8 @@ export type OnboardingStepId =
   | "loading"
   | "email";
 
-/**
- * Ten question-only steps for segmented progress (n filled of 10).
- */
-export const QUESTION_STEP_IDS: OnboardingStepId[] = [
-  "language",
-  "age",
-  "level",
-  "goals",
-  "dailyStudy",
-  "studyTimeOfDay",
-  "priorExperience",
-  "learningStyle",
-  "struggles",
-  "bobHeard",
-];
-
-export const TOTAL_QUESTIONS = QUESTION_STEP_IDS.length;
+/** Segments in the funnel progress bar (9 total, includes loading + email). */
+export const FUNNEL_PROGRESS_TOTAL = 9;
 
 export const stepOrder: OnboardingStepId[] = [
   "language",
@@ -93,9 +66,6 @@ export const stepOrder: OnboardingStepId[] = [
   "summaryMap",
   "goals",
   "summaryLadder",
-  "dailyStudy",
-  "studyTimeOfDay",
-  "priorExperience",
   "learningStyle",
   "struggles",
   "summaryThanksA",
@@ -105,10 +75,47 @@ export const stepOrder: OnboardingStepId[] = [
   "email",
 ];
 
-export function questionProgressForStep(stepId: OnboardingStepId): { current: number; total: number } | null {
-  const idx = QUESTION_STEP_IDS.indexOf(stepId);
-  if (idx < 0) return null;
-  return { current: idx + 1, total: TOTAL_QUESTIONS };
+/** Interstitial screens (not real questions); back skips these to the prior question. */
+export function isSummaryStep(stepId: OnboardingStepId): boolean {
+  return (
+    stepId === "summaryMap" ||
+    stepId === "summaryLadder" ||
+    stepId === "summaryThanksA" ||
+    stepId === "summaryThanksB"
+  );
+}
+
+/** Filled segment count for the step (1..FUNNEL_PROGRESS_TOTAL). Summaries share the prior question’s count. */
+export function questionProgressForStep(stepId: OnboardingStepId): { current: number; total: number } {
+  const total = FUNNEL_PROGRESS_TOTAL;
+  switch (stepId) {
+    case "language":
+      return { current: 1, total };
+    case "age":
+      return { current: 2, total };
+    case "level":
+      return { current: 3, total };
+    case "summaryMap":
+      return { current: 3, total };
+    case "goals":
+      return { current: 4, total };
+    case "summaryLadder":
+      return { current: 4, total };
+    case "learningStyle":
+      return { current: 5, total };
+    case "struggles":
+      return { current: 6, total };
+    case "summaryThanksA":
+      return { current: 6, total };
+    case "bobHeard":
+      return { current: 7, total };
+    case "summaryThanksB":
+      return { current: 7, total };
+    case "loading":
+      return { current: 8, total };
+    case "email":
+      return { current: 9, total };
+  }
 }
 
 export type OnboardingState = {

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useMemo, useReducer } from "react";
 import type { OnboardingAction, OnboardingAnswers, OnboardingState } from "./types";
-import { stepOrder } from "./types";
+import { isSummaryStep, stepOrder } from "./types";
 
 const TOTAL_STEPS = stepOrder.length;
 
@@ -12,9 +12,6 @@ const initialAnswers: OnboardingAnswers = {
   age: null,
   level: null,
   goals: [],
-  dailyStudy: null,
-  studyTimeOfDay: null,
-  priorExperience: null,
   learningStyle: [],
   struggles: [],
   bob: null,
@@ -36,8 +33,12 @@ function reducer(state: OnboardingState, action: OnboardingAction): OnboardingSt
       return { ...state, stepIndex: clampStep(action.stepIndex) };
     case "next":
       return { ...state, stepIndex: clampStep(state.stepIndex + 1) };
-    case "back":
-      return { ...state, stepIndex: clampStep(state.stepIndex - 1) };
+    case "back": {
+      if (state.stepIndex <= 0) return { ...state, stepIndex: 0 };
+      let i = state.stepIndex - 1;
+      while (i >= 0 && isSummaryStep(stepOrder[i]!)) i -= 1;
+      return { ...state, stepIndex: clampStep(Math.max(0, i)) };
+    }
     case "answer": {
       if (action.key === "languageOther") {
         const v = action.value as string | null;

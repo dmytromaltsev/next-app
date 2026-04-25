@@ -19,6 +19,7 @@ import { SegmentedProgressBar } from "@/components/SegmentedProgressBar";
 import { ageLabelForStats, resolvedLanguageDisplay } from "@/lib/onboarding/copy";
 import { useOnboarding } from "@/lib/onboarding/store";
 import {
+  isSummaryStep,
   questionProgressForStep,
   stepOrder,
   type OnboardingAnswers,
@@ -52,15 +53,6 @@ function headerTitle(stepId: OnboardingStepId): string {
   return "My profile";
 }
 
-function isSummaryStep(stepId: OnboardingStepId) {
-  return (
-    stepId === "summaryMap" ||
-    stepId === "summaryLadder" ||
-    stepId === "summaryThanksA" ||
-    stepId === "summaryThanksB"
-  );
-}
-
 function isMultiSelectStep(stepId: OnboardingStepId) {
   return stepId === "goals" || stepId === "learningStyle" || stepId === "struggles";
 }
@@ -72,9 +64,6 @@ function isSingleSelectStep(stepId: OnboardingStepId, a: OnboardingAnswers) {
     stepId === "language" ||
     stepId === "age" ||
     stepId === "level" ||
-    stepId === "dailyStudy" ||
-    stepId === "studyTimeOfDay" ||
-    stepId === "priorExperience" ||
     stepId === "bobHeard"
   );
 }
@@ -100,12 +89,6 @@ function canProceed(stepId: OnboardingStepId, a: OnboardingAnswers) {
       return true;
     case "goals":
       return a.goals.length >= 1;
-    case "dailyStudy":
-      return a.dailyStudy !== null;
-    case "studyTimeOfDay":
-      return a.studyTimeOfDay !== null;
-    case "priorExperience":
-      return a.priorExperience !== null;
     case "learningStyle":
       return a.learningStyle.length >= 1;
     case "struggles":
@@ -123,10 +106,6 @@ function canProceed(stepId: OnboardingStepId, a: OnboardingAnswers) {
 
 function validationHint(stepId: OnboardingStepId): string | null {
   switch (stepId) {
-    case "goals":
-    case "learningStyle":
-    case "struggles":
-      return "Select at least one option to continue.";
     case "email":
       return "Enter a valid email (e.g. you@example.com).";
     default:
@@ -230,19 +209,13 @@ export function OnboardingWizard() {
       case "age":
         return "What is your age?";
       case "level":
-        return `What's your ${resolvedLanguageDisplay(a)} language level?`;
+        return `What's your ${resolvedLanguageDisplay(a)} level?`;
       case "summaryMap":
         return "You've come to the right place!";
       case "goals":
         return "What goals do you have?";
       case "summaryLadder":
         return "You're making progress already!";
-      case "dailyStudy":
-        return "How many minutes per day can you practice?";
-      case "studyTimeOfDay":
-        return "When do you prefer to learn?";
-      case "priorExperience":
-        return "Have you learned languages before?";
       case "learningStyle":
         return "What is your learning style?";
       case "struggles":
@@ -308,13 +281,12 @@ export function OnboardingWizard() {
     }
   };
 
-  const showProgress = progress !== null;
-  const primaryCta = multi ? "Next step" : "Continue";
+  const primaryCta = "Continue";
 
   if (emailSent) {
     return (
       <div className={`${quizSans.className} flex min-h-dvh flex-col bg-funnel-canvas text-funnel-ink`}>
-        <FunnelHeader title="My profile" onBack={() => {}} backDisabled />
+        <FunnelHeader title="My profile" onBack={() => {}} showBack={false} />
         <div className="flex flex-1 flex-col items-center px-4 pb-8 pt-10">
           <div className="w-full max-w-lg text-center">
             <h2 className="text-2xl font-bold text-funnel-ink">You&apos;re all set</h2>
@@ -343,7 +315,7 @@ export function OnboardingWizard() {
       <FunnelHeader
         title={headerTitle(stepId)}
         onBack={() => dispatch({ type: "back" })}
-        backDisabled={state.stepIndex === 0}
+        showBack={state.stepIndex > 0}
       />
 
       <div
@@ -352,11 +324,9 @@ export function OnboardingWizard() {
           showFloatingContinue ? "pb-28 sm:pb-32" : "pb-8",
         ].join(" ")}
       >
-        {showProgress && progress ? (
-          <div className="mb-6">
-            <SegmentedProgressBar value={progress.current} max={progress.total} />
-          </div>
-        ) : null}
+        <div className="mb-6">
+          <SegmentedProgressBar value={progress.current} max={progress.total} />
+        </div>
 
         <QuestionShell
           stepKey={stepId}
@@ -380,13 +350,13 @@ export function OnboardingWizard() {
                 value={a.languageOther}
                 onChange={(v) => dispatch({ type: "answer", key: "languageOther", value: v })}
               />
-              <p className="text-center text-[11px] leading-relaxed text-funnel-muted">
+              <p className="text-center text-[10px] leading-snug text-funnel-muted italic sm:text-[11px]">
                 By selecting a language and continuing, you agree to our{" "}
-                <a href="#" className="font-semibold text-funnel-ink underline underline-offset-2">
+                <a href="#" className="not-italic font-normal text-funnel-muted underline underline-offset-2">
                   Terms of Use
                 </a>{" "}
                 and{" "}
-                <a href="#" className="font-semibold text-funnel-ink underline underline-offset-2">
+                <a href="#" className="not-italic font-normal text-funnel-muted underline underline-offset-2">
                   Privacy Policy
                 </a>
                 .
@@ -414,11 +384,10 @@ export function OnboardingWizard() {
               value={a.level ?? ""}
               onChange={(v) => dispatch({ type: "answerAndNext", key: "level", value: v as OnboardingAnswers["level"] })}
               options={[
-                { value: "beginner", label: "Beginner", hint: "New or very little exposure" },
-                { value: "elementary", label: "Elementary", hint: "Basics, simple conversations" },
-                { value: "intermediate", label: "Intermediate", hint: "Comfortable in common situations" },
-                { value: "advanced", label: "Advanced", hint: "Fluent in most contexts" },
-                { value: "fluent", label: "Fluent / native-like", hint: "Fine-tuning and nuance" },
+                { value: "beginner", label: "Beginner" },
+                { value: "intermediate", label: "Intermediate" },
+                { value: "advanced", label: "Advanced" },
+                { value: "fluent", label: "Fluent / native-like" },
               ]}
             />
           ) : null}
@@ -442,58 +411,6 @@ export function OnboardingWizard() {
           ) : null}
 
           {stepId === "summaryLadder" ? <LadderIllustration /> : null}
-
-          {stepId === "dailyStudy" ? (
-            <ChoiceGrid
-              value={a.dailyStudy ?? ""}
-              onChange={(v) =>
-                dispatch({ type: "answerAndNext", key: "dailyStudy", value: v as OnboardingAnswers["dailyStudy"] })
-              }
-              options={[
-                { value: "5", label: "About 5 minutes" },
-                { value: "10", label: "About 10 minutes" },
-                { value: "15", label: "About 15 minutes" },
-                { value: "20plus", label: "20+ minutes" },
-              ]}
-            />
-          ) : null}
-
-          {stepId === "studyTimeOfDay" ? (
-            <ChoiceGrid
-              value={a.studyTimeOfDay ?? ""}
-              onChange={(v) =>
-                dispatch({
-                  type: "answerAndNext",
-                  key: "studyTimeOfDay",
-                  value: v as OnboardingAnswers["studyTimeOfDay"],
-                })
-              }
-              options={[
-                { value: "morning", label: "Morning" },
-                { value: "afternoon", label: "Afternoon" },
-                { value: "evening", label: "Evening" },
-                { value: "late", label: "Late night" },
-              ]}
-            />
-          ) : null}
-
-          {stepId === "priorExperience" ? (
-            <ChoiceGrid
-              value={a.priorExperience ?? ""}
-              onChange={(v) =>
-                dispatch({
-                  type: "answerAndNext",
-                  key: "priorExperience",
-                  value: v as OnboardingAnswers["priorExperience"],
-                })
-              }
-              options={[
-                { value: "never", label: "Not really", hint: "This is my first serious try" },
-                { value: "some", label: "A little", hint: "School or apps, on and off" },
-                { value: "fluent_other", label: "Yes, I speak another language well", hint: "Building on that experience" },
-              ]}
-            />
-          ) : null}
 
           {stepId === "learningStyle" ? (
             <MultiChoiceGrid
