@@ -43,7 +43,7 @@ const LANGUAGE_OPTIONS: Array<{
   { value: "japanese", label: "Japanese", flag: "🇯🇵" },
   { value: "italian", label: "Italian", flag: "🇮🇹" },
   { value: "portuguese", label: "Portuguese", flag: "🇵🇹" },
-  { value: "brazilian", label: "Portuguese (Brazil)", flag: "🇧🇷" },
+  { value: "chinese", label: "Chinese", flag: "🇨🇳" },
 ];
 
 function headerTitle(stepId: OnboardingStepId): string {

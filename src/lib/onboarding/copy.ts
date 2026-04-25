@@ -9,7 +9,7 @@ const LANGUAGE_LABEL: Record<TargetLanguage, string> = {
   japanese: "Japanese",
   italian: "Italian",
   portuguese: "Portuguese",
-  brazilian: "Portuguese (Brazil)",
+  chinese: "Chinese",
 };
 
 export function languageLabel(lang: TargetLanguage | null): string {

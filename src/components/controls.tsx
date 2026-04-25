@@ -200,7 +200,7 @@ export function LanguageChoiceGrid<T extends string>({
   options: Array<{ value: T; label: string; flag: string }>;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+    <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
