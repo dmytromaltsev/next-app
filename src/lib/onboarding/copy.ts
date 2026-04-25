@@ -18,10 +18,12 @@ export function languageLabel(lang: TargetLanguage | null): string {
 }
 
 const AGE_LABEL: Record<AgeBracket, string> = {
-  "18-34": "18–34",
+  "18-24": "18–24",
+  "25-34": "25–34",
   "35-44": "35–44",
   "45-54": "45–54",
-  "55+": "55+",
+  "55-64": "55–64",
+  "65+": "65+",
 };
 
 export function ageLabelForStats(age: AgeBracket | null): string {

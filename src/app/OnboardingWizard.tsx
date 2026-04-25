@@ -1,19 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Nunito } from "next/font/google";
+import { Inter } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { LadderIllustration, WorldMapIllustration } from "@/components/FunnelArt";
-import { ProgressBar } from "@/components/ProgressBar";
-import { QuestionShell } from "@/components/QuestionShell";
+import { FunnelHeader } from "@/components/FunnelHeader";
 import {
   ChoiceGrid,
   LanguageChoiceGrid,
   MultiChoiceGrid,
   PrimaryButton,
-  SecondaryButton,
   TextInput,
 } from "@/components/controls";
+import { QuestionShell } from "@/components/QuestionShell";
+import { SegmentedProgressBar } from "@/components/SegmentedProgressBar";
 import { ageLabelForStats, languageLabel } from "@/lib/onboarding/copy";
 import { useOnboarding } from "@/lib/onboarding/store";
 import {
@@ -23,17 +24,11 @@ import {
   type OnboardingStepId,
 } from "@/lib/onboarding/types";
 
-const funnelSans = Nunito({
+const quizSans = Inter({
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  weight: ["500", "600", "700"],
   display: "swap",
 });
-
-function shellEyebrowBadge(stepId: OnboardingStepId): { eyebrow?: string; badge?: string } {
-  if (stepId === "loading") return {};
-  if (stepId === "email") return { eyebrow: "Almost there" };
-  return { eyebrow: "Language learning plan", badge: "Short quiz" };
-}
 
 const LANGUAGE_OPTIONS: Array<{
   value: NonNullable<OnboardingAnswers["language"]>;
@@ -50,6 +45,24 @@ const LANGUAGE_OPTIONS: Array<{
   { value: "portuguese", label: "Portuguese", flag: "🇵🇹" },
   { value: "brazilian", label: "Portuguese (Brazil)", flag: "🇧🇷" },
 ];
+
+function headerTitle(stepId: OnboardingStepId): string {
+  if (stepId === "goals" || stepId === "learningStyle" || stepId === "struggles") return "Your plan";
+  return "My profile";
+}
+
+function isSummaryStep(stepId: OnboardingStepId) {
+  return (
+    stepId === "summaryMap" ||
+    stepId === "summaryLadder" ||
+    stepId === "summaryThanksA" ||
+    stepId === "summaryThanksB"
+  );
+}
+
+function isMultiSelectStep(stepId: OnboardingStepId) {
+  return stepId === "goals" || stepId === "learningStyle" || stepId === "struggles";
+}
 
 function clampText(s: string, maxLen: number) {
   const t = s.trim();
@@ -133,7 +146,7 @@ function LoadingStep() {
         {REVIEWS.map((r) => (
           <blockquote
             key={r.name}
-            className="rounded-2xl border border-funnel-border bg-funnel-pill px-4 py-3 text-sm text-funnel-ink"
+            className="rounded-xl border border-funnel-border bg-funnel-selected/50 px-4 py-3 text-left text-sm text-funnel-ink"
           >
             <p className="leading-relaxed">&ldquo;{r.quote}&rdquo;</p>
             <footer className="mt-2 text-xs font-semibold text-funnel-muted">{r.name}</footer>
@@ -155,6 +168,8 @@ export function OnboardingWizard() {
 
   const nextDisabled = !canProceed(stepId, a);
   const hint = nextDisabled ? validationHint(stepId) : null;
+  const summary = isSummaryStep(stepId);
+  const multi = isMultiSelectStep(stepId);
 
   useEffect(() => {
     if (stepId !== "loading") return;
@@ -216,11 +231,10 @@ export function OnboardingWizard() {
       case "struggles":
         return "Do any of these sound familiar?";
       case "summaryThanksA":
-        return "Thanks for sharing! Our program is developed by professionals.";
+      case "summaryThanksB":
+        return "Thanks for sharing!";
       case "bobHeard":
         return "Did you hear about Bob from mentor or coach?";
-      case "summaryThanksB":
-        return "Thanks for sharing! Our program is developed by professionals.";
       case "loading":
         return "Building your plan";
       case "email":
@@ -230,12 +244,46 @@ export function OnboardingWizard() {
     }
   };
 
-  const subtitleForStep = (): string | undefined => {
+  const subtitleForStep = (): ReactNode => {
     switch (stepId) {
+      case "age":
+        return "We only use age to personalize your plan.";
+      case "goals":
+      case "learningStyle":
+      case "struggles":
+        return "Select all that apply.";
       case "summaryMap":
-        return `176,372 people aged ${ageLabelForStats(a.age)} are already improving their ${languageLabel(a.language)} language skills with us—but this journey is all about you!`;
+        return (
+          <p className="text-base leading-relaxed">
+            <span className="text-funnel-muted">176,372 people aged </span>
+            <strong className="font-bold text-funnel-accent">{ageLabelForStats(a.age)}</strong>
+            <span className="text-funnel-muted"> are already improving their </span>
+            <strong className="font-bold text-funnel-accent">{languageLabel(a.language)}</strong>
+            <span className="text-funnel-muted">
+              {" "}
+              skills with us—but this journey is <strong className="font-bold text-funnel-accent">all about you</strong>.
+            </span>
+          </p>
+        );
       case "summaryLadder":
-        return "Science shows setting clear goals makes you 3x more likely to meet them. Give yourself a mini high five.";
+        return (
+          <p className="text-base leading-relaxed">
+            <span className="text-funnel-muted">Science shows that </span>
+            <strong className="font-bold text-funnel-accent">setting clear goals</strong>
+            <span className="text-funnel-muted"> makes you </span>
+            <strong className="font-bold text-funnel-accent">3× more likely</strong>
+            <span className="text-funnel-muted"> to meet them. Give yourself a mini high five.</span>
+          </p>
+        );
+      case "summaryThanksA":
+      case "summaryThanksB":
+        return (
+          <p className="text-base leading-relaxed">
+            <span className="text-funnel-muted">Our program is developed by </span>
+            <strong className="font-bold text-funnel-accent">professionals</strong>
+            <span className="text-funnel-muted"> to match how you learn best.</span>
+          </p>
+        );
       case "email":
         return "We’ll email your next steps—no spam.";
       default:
@@ -244,35 +292,25 @@ export function OnboardingWizard() {
   };
 
   const showProgress = progress !== null;
+  const primaryCta = multi ? "Next step" : "Continue";
 
   if (emailSent) {
     return (
-      <div
-        className={`${funnelSans.className} flex min-h-dvh w-full flex-1 flex-col bg-funnel-canvas text-funnel-ink`}
-      >
-        <header className="flex shrink-0 items-center justify-between px-4 py-4 sm:px-8">
-          <span className="text-lg font-extrabold tracking-tight text-funnel-primary">Learn</span>
-          <a
-            href="#"
-            className="text-xs font-semibold text-funnel-muted underline decoration-funnel-border decoration-2 underline-offset-4 hover:text-funnel-ink"
-          >
-            Docs
-          </a>
-        </header>
-        <div className="flex flex-1 items-center justify-center px-4 pb-12">
-          <div className="w-full max-w-lg rounded-3xl border border-funnel-border bg-funnel-surface p-8 text-center shadow-[0_12px_40px_rgba(20,34,31,0.08)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-funnel-muted">All set</p>
-            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-funnel-ink">You&apos;re all set</h1>
+      <div className={`${quizSans.className} flex min-h-dvh flex-col bg-funnel-canvas text-funnel-ink`}>
+        <FunnelHeader title="My profile" onBack={() => {}} backDisabled />
+        <div className="flex flex-1 flex-col items-center px-4 pb-8 pt-10">
+          <div className="w-full max-w-lg text-center">
+            <h2 className="text-2xl font-bold text-funnel-ink">You&apos;re all set</h2>
             <p className="mt-3 text-sm leading-relaxed text-funnel-muted">
               Check your inbox at <span className="font-semibold text-funnel-ink">{a.email}</span> for next steps.
             </p>
-            <div className="mt-8">
+            <div className="mt-10">
               <PrimaryButton
                 onClick={() => {
                   setEmailSent(false);
                   dispatch({ type: "reset" });
                 }}
-                className="w-full sm:w-auto"
+                className="w-full"
               >
                 Start over
               </PrimaryButton>
@@ -283,81 +321,32 @@ export function OnboardingWizard() {
     );
   }
 
-  const { eyebrow, badge } = shellEyebrowBadge(stepId);
-
   return (
-    <div
-      className={`${funnelSans.className} flex min-h-dvh w-full flex-1 flex-col bg-funnel-canvas text-funnel-ink [color-scheme:light]`}
-    >
-      <header className="flex shrink-0 items-center justify-between px-4 py-4 sm:px-8">
-        <span className="text-lg font-extrabold tracking-tight text-funnel-primary">Learn</span>
-        <a
-          href="#"
-          className="text-xs font-semibold text-funnel-muted underline decoration-funnel-border decoration-2 underline-offset-4 hover:text-funnel-ink"
+    <div className={`${quizSans.className} flex min-h-dvh flex-col bg-funnel-canvas text-funnel-ink [color-scheme:light]`}>
+      <FunnelHeader
+        title={headerTitle(stepId)}
+        onBack={() => dispatch({ type: "back" })}
+        backDisabled={state.stepIndex === 0}
+      />
+
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pb-36 pt-5">
+        {showProgress && progress ? (
+          <div className="mb-6">
+            <SegmentedProgressBar value={progress.current} max={progress.total} />
+          </div>
+        ) : null}
+
+        <QuestionShell
+          stepKey={stepId}
+          align={summary || multi ? "center" : "start"}
+          title={titleForStep()}
+          subtitle={subtitleForStep()}
+          footer={
+            stepId === "loading" ? (
+              <p className="text-center text-xs text-funnel-muted">This only takes a few seconds…</p>
+            ) : undefined
+          }
         >
-          Docs
-        </a>
-      </header>
-
-      <div className="flex flex-1 justify-center px-3 pb-10 pt-1 sm:px-6 sm:pb-14 sm:pt-2">
-        <div className="flex w-full max-w-lg flex-1 flex-col rounded-3xl border border-funnel-border bg-funnel-surface p-5 shadow-[0_12px_40px_rgba(20,34,31,0.07)] sm:max-w-xl sm:flex-none sm:p-9">
-          {showProgress && progress ? (
-            <div className="mb-5 flex items-center gap-3 sm:mb-7">
-              <div className="min-w-0 flex-1">
-                <ProgressBar value={progress.current} max={progress.total} />
-              </div>
-              <div className="shrink-0 tabular-nums text-xs font-bold text-funnel-muted">{progress.current}</div>
-              <div className="shrink-0 text-xs font-bold text-funnel-muted/50">/</div>
-              <div className="shrink-0 tabular-nums text-xs font-bold text-funnel-muted">{progress.total}</div>
-            </div>
-          ) : null}
-
-          <QuestionShell
-            stepKey={stepId}
-            eyebrow={eyebrow}
-            badge={badge}
-            title={titleForStep()}
-            subtitle={subtitleForStep()}
-            footer={
-              stepId === "loading" ? (
-                <p className="text-center text-xs text-funnel-muted">This only takes a few seconds…</p>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <SecondaryButton
-                      onClick={() => dispatch({ type: "back" })}
-                      disabled={state.stepIndex === 0}
-                      className="sm:min-w-[6.5rem]"
-                    >
-                      Back
-                    </SecondaryButton>
-                    <PrimaryButton
-                      onClick={handleContinue}
-                      disabled={nextDisabled || submitState === "submitting"}
-                      className="sm:min-w-[8rem]"
-                    >
-                      {submitState === "submitting" && stepId === "email" ? "Sending…" : "Continue"}
-                    </PrimaryButton>
-                  </div>
-                  {hint ? <div className="text-center text-xs text-funnel-muted sm:text-left">{hint}</div> : null}
-                  {submitState === "error" ? (
-                    <div className="text-center text-xs text-red-700 sm:text-left">{submitError || "Something went wrong. Please try again."}</div>
-                  ) : null}
-                  <p className="text-center text-[11px] leading-relaxed text-funnel-muted sm:text-left">
-                    By continuing you agree to our{" "}
-                    <a href="#" className="font-semibold text-funnel-ink underline decoration-funnel-border underline-offset-2">
-                      Terms of Use
-                    </a>{" "}
-                    and{" "}
-                    <a href="#" className="font-semibold text-funnel-ink underline decoration-funnel-border underline-offset-2">
-                      Privacy Policy
-                    </a>
-                    .
-                  </p>
-                </div>
-              )
-            }
-          >
           {stepId === "language" ? (
             <LanguageChoiceGrid
               value={a.language}
@@ -368,21 +357,21 @@ export function OnboardingWizard() {
 
           {stepId === "age" ? (
             <ChoiceGrid
-              columnsClass="grid-cols-1"
               value={a.age ?? ""}
               onChange={(v) => dispatch({ type: "answer", key: "age", value: v as OnboardingAnswers["age"] })}
               options={[
-                { value: "18-34", label: "Age 18–34" },
-                { value: "35-44", label: "Age 35–44" },
-                { value: "45-54", label: "Age 45–54" },
-                { value: "55+", label: "Age 55+" },
+                { value: "18-24", label: "18–24" },
+                { value: "25-34", label: "25–34" },
+                { value: "35-44", label: "35–44" },
+                { value: "45-54", label: "45–54" },
+                { value: "55-64", label: "55–64" },
+                { value: "65+", label: "65+" },
               ]}
             />
           ) : null}
 
           {stepId === "level" ? (
             <ChoiceGrid
-              columnsClass="grid-cols-1"
               value={a.level ?? ""}
               onChange={(v) => dispatch({ type: "answer", key: "level", value: v as OnboardingAnswers["level"] })}
               options={[
@@ -417,7 +406,6 @@ export function OnboardingWizard() {
 
           {stepId === "dailyStudy" ? (
             <ChoiceGrid
-              columnsClass="grid-cols-1"
               value={a.dailyStudy ?? ""}
               onChange={(v) =>
                 dispatch({ type: "answer", key: "dailyStudy", value: v as OnboardingAnswers["dailyStudy"] })
@@ -433,7 +421,6 @@ export function OnboardingWizard() {
 
           {stepId === "studyTimeOfDay" ? (
             <ChoiceGrid
-              columnsClass="grid-cols-1"
               value={a.studyTimeOfDay ?? ""}
               onChange={(v) =>
                 dispatch({ type: "answer", key: "studyTimeOfDay", value: v as OnboardingAnswers["studyTimeOfDay"] })
@@ -449,7 +436,6 @@ export function OnboardingWizard() {
 
           {stepId === "priorExperience" ? (
             <ChoiceGrid
-              columnsClass="grid-cols-1"
               value={a.priorExperience ?? ""}
               onChange={(v) =>
                 dispatch({ type: "answer", key: "priorExperience", value: v as OnboardingAnswers["priorExperience"] })
@@ -491,7 +477,6 @@ export function OnboardingWizard() {
 
           {stepId === "bobHeard" ? (
             <ChoiceGrid
-              columnsClass="grid-cols-2"
               value={a.bob ?? ""}
               onChange={(v) => dispatch({ type: "answer", key: "bob", value: v as OnboardingAnswers["bob"] })}
               options={[
@@ -512,9 +497,39 @@ export function OnboardingWizard() {
               onChange={(v) => dispatch({ type: "answer", key: "email", value: clampText(v, 120) })}
             />
           ) : null}
-          </QuestionShell>
-        </div>
+        </QuestionShell>
       </div>
+
+      {stepId !== "loading" ? (
+        <footer className="fixed bottom-0 left-0 right-0 z-20 border-t border-funnel-border bg-funnel-surface pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_24px_rgba(17,24,39,0.06)]">
+          <div className="mx-auto w-full max-w-lg px-4">
+            {hint ? <p className="mb-2 text-center text-xs text-funnel-muted">{hint}</p> : null}
+            {submitState === "error" ? (
+              <p className="mb-2 text-center text-xs text-red-600">{submitError || "Something went wrong."}</p>
+            ) : null}
+            <PrimaryButton
+              onClick={handleContinue}
+              disabled={nextDisabled || submitState === "submitting"}
+              className="w-full"
+            >
+              {submitState === "submitting" && stepId === "email" ? "Sending…" : primaryCta}
+            </PrimaryButton>
+            {!summary && stepId !== "email" ? (
+              <p className="mt-3 text-center text-[11px] leading-relaxed text-funnel-muted">
+                By continuing you agree to our{" "}
+                <a href="#" className="font-semibold text-funnel-ink underline underline-offset-2">
+                  Terms of Use
+                </a>{" "}
+                and{" "}
+                <a href="#" className="font-semibold text-funnel-ink underline underline-offset-2">
+                  Privacy Policy
+                </a>
+                .
+              </p>
+            ) : null}
+          </div>
+        </footer>
+      ) : null}
     </div>
   );
 }

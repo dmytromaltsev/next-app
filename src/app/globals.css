@@ -11,19 +11,18 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Ruut-style quiz funnel (warm canvas + forest accent) */
-  --color-funnel-canvas: #f0ebe3;
+  /* Quiz funnel — white / blue (reference screenshots) */
+  --color-funnel-canvas: #ffffff;
   --color-funnel-surface: #ffffff;
-  --color-funnel-ink: #14221f;
-  --color-funnel-muted: #5e6966;
-  --color-funnel-border: #e2dbd1;
-  --color-funnel-primary: #153529;
-  --color-funnel-primary-hover: #1d4538;
-  --color-funnel-selected: #e3efe8;
-  --color-funnel-track: #dad3c8;
-  --color-funnel-bar: #2d6b52;
-  --color-funnel-pill: #e8f0eb;
-  --color-funnel-pill-text: #2a4d3f;
+  --color-funnel-ink: #111827;
+  --color-funnel-muted: #6b7280;
+  --color-funnel-border: #e5e7eb;
+  --color-funnel-primary: #3454a1;
+  --color-funnel-primary-hover: #2a4482;
+  --color-funnel-selected: #eff6ff;
+  --color-funnel-track: #e5e7eb;
+  --color-funnel-bar: #3454a1;
+  --color-funnel-accent: #3454a1;
 }
 
 @media (prefers-color-scheme: dark) {

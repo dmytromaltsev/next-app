@@ -9,7 +9,7 @@ export type TargetLanguage =
   | "portuguese"
   | "brazilian";
 
-export type AgeBracket = "18-34" | "35-44" | "45-54" | "55+";
+export type AgeBracket = "18-24" | "25-34" | "35-44" | "45-54" | "55-64" | "65+";
 
 export type LanguageLevel = "beginner" | "elementary" | "intermediate" | "advanced" | "fluent";
 
@@ -67,9 +67,7 @@ export type OnboardingStepId =
   | "email";
 
 /**
- * Ten question-only steps for progress (n/10). Your script lists seven themed questions;
- * three short routine questions (minutes, time of day, prior experience) sit after the
- * ladder summary so we still reach 10 counted steps without changing earlier copy.
+ * Ten question-only steps for segmented progress (n filled of 10).
  */
 export const QUESTION_STEP_IDS: OnboardingStepId[] = [
   "language",

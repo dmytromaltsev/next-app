@@ -3,10 +3,7 @@
 import type React from "react";
 
 const btnPrimary =
-  "inline-flex min-h-12 w-full touch-manipulation items-center justify-center rounded-2xl bg-funnel-primary px-6 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99] hover:bg-funnel-primary-hover disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto";
-
-const btnSecondary =
-  "inline-flex min-h-12 w-full touch-manipulation items-center justify-center rounded-2xl border border-funnel-border bg-funnel-surface px-6 text-sm font-semibold text-funnel-ink transition active:scale-[0.99] hover:bg-funnel-canvas disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto";
+  "inline-flex min-h-[52px] w-full touch-manipulation items-center justify-center rounded-lg bg-funnel-primary px-5 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition active:scale-[0.99] hover:bg-funnel-primary-hover disabled:cursor-not-allowed disabled:opacity-45";
 
 export function PrimaryButton({
   children,
@@ -40,7 +37,17 @@ export function SecondaryButton({
   className?: string;
 }) {
   return (
-    <button type="button" disabled={disabled} onClick={onClick} className={[btnSecondary, className].filter(Boolean).join(" ")}>
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={[
+        "inline-flex min-h-12 w-full touch-manipulation items-center justify-center rounded-lg border border-funnel-border bg-funnel-surface px-5 text-sm font-semibold text-funnel-ink transition hover:bg-funnel-selected disabled:opacity-40 sm:w-auto",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {children}
     </button>
   );
@@ -66,29 +73,36 @@ export function TextInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       autoFocus={autoFocus}
-      className="h-12 w-full min-h-12 rounded-2xl border border-funnel-border bg-funnel-surface px-4 text-base text-funnel-ink outline-none ring-0 placeholder:text-funnel-muted/70 focus:border-funnel-bar focus:ring-2 focus:ring-funnel-bar/20"
+      className="h-12 w-full min-h-12 rounded-xl border border-funnel-border bg-funnel-surface px-4 text-base text-funnel-ink outline-none placeholder:text-funnel-muted focus:border-funnel-primary focus:ring-2 focus:ring-funnel-primary/20"
     />
   );
 }
 
-const cardBase =
-  "touch-manipulation rounded-2xl border px-4 py-3.5 text-left transition active:scale-[0.99]";
-const cardIdle = "border-funnel-border bg-funnel-surface text-funnel-ink shadow-[0_1px_0_rgba(20,34,31,0.04)] hover:border-funnel-muted/40 hover:bg-funnel-canvas/50";
-const cardSelected = "border-funnel-primary bg-funnel-selected text-funnel-ink shadow-[0_2px_8px_rgba(21,53,41,0.08)] ring-1 ring-funnel-primary/15";
+function RadioCircle({ selected }: { selected: boolean }) {
+  return (
+    <span
+      className={[
+        "flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+        selected ? "border-funnel-primary" : "border-funnel-border bg-white",
+      ].join(" ")}
+      aria-hidden
+    >
+      {selected ? <span className="h-2.5 w-2.5 rounded-full bg-funnel-primary" /> : null}
+    </span>
+  );
+}
 
-export function ChoiceGrid({
+export function RadioList({
   value,
   onChange,
   options,
-  columnsClass = "grid-cols-1 sm:grid-cols-2",
 }: {
   value: string;
   onChange: (v: string) => void;
   options: Array<{ value: string; label: string; hint?: string }>;
-  columnsClass?: string;
 }) {
   return (
-    <div className={["grid gap-2.5", columnsClass].join(" ")}>
+    <div className="flex flex-col gap-3">
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -96,18 +110,46 @@ export function ChoiceGrid({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={[cardBase, "flex min-h-[3.25rem] flex-col gap-0.5", selected ? cardSelected : cardIdle].join(" ")}
+            className={[
+              "flex min-h-[56px] w-full touch-manipulation items-center justify-between gap-4 rounded-xl border bg-funnel-surface px-4 py-3.5 text-left transition active:scale-[0.99]",
+              selected ? "border-funnel-primary bg-funnel-selected" : "border-funnel-border hover:border-funnel-muted/50",
+            ].join(" ")}
           >
-            <span className="text-sm font-semibold">{opt.label}</span>
-            {opt.hint ? (
-              <span className={["text-xs leading-5", selected ? "text-funnel-muted" : "text-funnel-muted/90"].join(" ")}>
-                {opt.hint}
-              </span>
-            ) : null}
+            <div className="min-w-0 flex-1">
+              <div className="text-base font-bold text-funnel-ink">{opt.label}</div>
+              {opt.hint ? <div className="mt-0.5 text-sm font-normal text-funnel-muted">{opt.hint}</div> : null}
+            </div>
+            <RadioCircle selected={selected} />
           </button>
         );
       })}
     </div>
+  );
+}
+
+export function ChoiceGrid({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: Array<{ value: string; label: string; hint?: string }>;
+}) {
+  return <RadioList value={value} onChange={onChange} options={options} />;
+}
+
+function CheckboxBox({ selected }: { selected: boolean }) {
+  return (
+    <span
+      className={[
+        "flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded border-2 text-[11px] font-bold leading-none text-white",
+        selected ? "border-funnel-primary bg-funnel-primary" : "border-funnel-border bg-white",
+      ].join(" ")}
+      aria-hidden
+    >
+      {selected ? "✓" : ""}
+    </span>
   );
 }
 
@@ -126,7 +168,7 @@ export function MultiChoiceGrid<T extends string>({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-2.5">
+    <div className="flex flex-col gap-3">
       {options.map((opt) => {
         const selected = values.includes(opt.value);
         return (
@@ -135,23 +177,12 @@ export function MultiChoiceGrid<T extends string>({
             type="button"
             onClick={() => toggle(opt.value)}
             className={[
-              cardBase,
-              "flex min-h-[3.25rem] items-center text-sm font-semibold",
-              selected ? cardSelected : cardIdle,
+              "flex min-h-[56px] w-full touch-manipulation items-center justify-between gap-4 rounded-xl border bg-funnel-surface px-4 py-3.5 text-left transition active:scale-[0.99]",
+              selected ? "border-funnel-primary bg-funnel-selected" : "border-funnel-border hover:border-funnel-muted/50",
             ].join(" ")}
           >
-            <span
-              className={[
-                "mr-3 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-bold",
-                selected
-                  ? "border-funnel-primary/40 bg-funnel-primary text-white"
-                  : "border-funnel-border bg-funnel-surface text-transparent",
-              ].join(" ")}
-              aria-hidden
-            >
-              {selected ? "✓" : ""}
-            </span>
-            {opt.label}
+            <span className="min-w-0 flex-1 text-base font-semibold text-funnel-ink">{opt.label}</span>
+            <CheckboxBox selected={selected} />
           </button>
         );
       })}
@@ -169,7 +200,7 @@ export function LanguageChoiceGrid<T extends string>({
   options: Array<{ value: T; label: string; flag: string }>;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+    <div className="flex flex-col gap-3">
       {options.map((opt) => {
         const selected = opt.value === value;
         return (
@@ -178,14 +209,17 @@ export function LanguageChoiceGrid<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={[
-              "flex min-h-[4rem] touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-3 text-center transition active:scale-[0.99]",
-              selected ? cardSelected : cardIdle,
+              "flex min-h-[56px] w-full touch-manipulation items-center justify-between gap-4 rounded-xl border bg-funnel-surface px-4 py-3.5 text-left transition active:scale-[0.99]",
+              selected ? "border-funnel-primary bg-funnel-selected" : "border-funnel-border hover:border-funnel-muted/50",
             ].join(" ")}
           >
-            <span className="text-2xl leading-none" aria-hidden>
-              {opt.flag}
-            </span>
-            <span className="text-[11px] font-semibold leading-tight text-funnel-ink">{opt.label}</span>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <span className="text-2xl leading-none" aria-hidden>
+                {opt.flag}
+              </span>
+              <span className="text-base font-bold text-funnel-ink">{opt.label}</span>
+            </div>
+            <RadioCircle selected={selected} />
           </button>
         );
       })}
