@@ -1,30 +1,115 @@
+export type TargetLanguage =
+  | "english"
+  | "spanish"
+  | "french"
+  | "german"
+  | "korean"
+  | "japanese"
+  | "italian"
+  | "portuguese"
+  | "brazilian";
+
+export type AgeBracket = "18-34" | "35-44" | "45-54" | "55+";
+
+export type LanguageLevel = "beginner" | "elementary" | "intermediate" | "advanced" | "fluent";
+
+export type GoalId =
+  | "speak_confidently"
+  | "travel_easily"
+  | "understand_movies_music"
+  | "watch_movies"
+  | "grow_career"
+  | "pass_exam"
+  | "learn_for_fun";
+
+export type LearningStyleId = "practice" | "visual" | "listening" | "reading_writing" | "mixed";
+
+export type StruggleId = "too_old" | "takes_too_long" | "failed_before" | "distracted";
+
+export type DailyStudy = "5" | "10" | "15" | "20plus";
+
+export type StudyTimeOfDay = "morning" | "afternoon" | "evening" | "late";
+
+export type PriorExperience = "never" | "some" | "fluent_other";
+
+export type BobAnswer = "yes" | "no";
+
 export type OnboardingAnswers = {
-  fullName: string;
-  role: "founder" | "marketer" | "designer" | "developer" | "other";
-  goal: "launch" | "grow" | "convert" | "retain" | "other";
-  timeframe: "7d" | "30d" | "90d" | "flexible";
-  experience: "new" | "some" | "pro";
-  audience: string;
-  budget: "0" | "low" | "mid" | "high";
-  brandTone: "bold" | "friendly" | "minimal" | "playful";
-  primaryChannel: "seo" | "ads" | "social" | "email" | "other";
-  biggestChallenge: string;
+  language: TargetLanguage | null;
+  age: AgeBracket | null;
+  level: LanguageLevel | null;
+  goals: GoalId[];
+  dailyStudy: DailyStudy | null;
+  studyTimeOfDay: StudyTimeOfDay | null;
+  priorExperience: PriorExperience | null;
+  learningStyle: LearningStyleId[];
+  struggles: StruggleId[];
+  bob: BobAnswer | null;
   email: string;
 };
 
 export type OnboardingStepId =
-  | "fullName"
-  | "role"
-  | "goal"
-  | "timeframe"
-  | "experience"
-  | "audience"
-  | "budget"
-  | "brandTone"
-  | "primaryChannel"
-  | "biggestChallenge"
-  | "email"
-  | "success";
+  | "language"
+  | "age"
+  | "level"
+  | "summaryMap"
+  | "goals"
+  | "summaryLadder"
+  | "dailyStudy"
+  | "studyTimeOfDay"
+  | "priorExperience"
+  | "learningStyle"
+  | "struggles"
+  | "summaryThanksA"
+  | "bobHeard"
+  | "summaryThanksB"
+  | "loading"
+  | "email";
+
+/**
+ * Ten question-only steps for progress (n/10). Your script lists seven themed questions;
+ * three short routine questions (minutes, time of day, prior experience) sit after the
+ * ladder summary so we still reach 10 counted steps without changing earlier copy.
+ */
+export const QUESTION_STEP_IDS: OnboardingStepId[] = [
+  "language",
+  "age",
+  "level",
+  "goals",
+  "dailyStudy",
+  "studyTimeOfDay",
+  "priorExperience",
+  "learningStyle",
+  "struggles",
+  "bobHeard",
+];
+
+export const TOTAL_QUESTIONS = QUESTION_STEP_IDS.length;
+
+export const stepOrder: OnboardingStepId[] = [
+  "language",
+  "age",
+  "level",
+  "summaryMap",
+  "goals",
+  "summaryLadder",
+  "dailyStudy",
+  "studyTimeOfDay",
+  "priorExperience",
+  "learningStyle",
+  "struggles",
+  "summaryThanksA",
+  "bobHeard",
+  "summaryThanksB",
+  "loading",
+  "email",
+];
+
+export function questionProgressForStep(stepId: OnboardingStepId): { current: number; total: number } | null {
+  const idx = QUESTION_STEP_IDS.indexOf(stepId);
+  if (idx < 0) return null;
+  return { current: idx + 1, total: TOTAL_QUESTIONS };
+}
 
 export type OnboardingState = {
   stepIndex: number;
@@ -41,4 +126,3 @@ export type OnboardingAction =
       value: OnboardingAnswers[keyof OnboardingAnswers];
     }
   | { type: "reset" };
-

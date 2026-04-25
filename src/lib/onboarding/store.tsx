@@ -2,20 +2,21 @@
 
 import React, { createContext, useContext, useMemo, useReducer } from "react";
 import type { OnboardingAction, OnboardingAnswers, OnboardingState } from "./types";
+import { stepOrder } from "./types";
 
-const TOTAL_STEPS = 12; // 10 questions + email + success
+const TOTAL_STEPS = stepOrder.length;
 
 const initialAnswers: OnboardingAnswers = {
-  fullName: "",
-  role: "founder",
-  goal: "launch",
-  timeframe: "30d",
-  experience: "new",
-  audience: "",
-  budget: "low",
-  brandTone: "friendly",
-  primaryChannel: "seo",
-  biggestChallenge: "",
+  language: null,
+  age: null,
+  level: null,
+  goals: [],
+  dailyStudy: null,
+  studyTimeOfDay: null,
+  priorExperience: null,
+  learningStyle: [],
+  struggles: [],
+  bob: null,
   email: "",
 };
 
@@ -73,4 +74,3 @@ export function useOnboarding() {
   if (!ctx) throw new Error("useOnboarding must be used within OnboardingProvider");
   return ctx;
 }
-
