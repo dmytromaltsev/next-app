@@ -20,16 +20,23 @@ export type LanguageLevel =
 
 export type GoalId =
   | "speak_confidently"
+  | "become_fluent"
   | "travel_easily"
-  | "understand_movies_music"
   | "watch_movies"
+  | "enjoy_music"
+  | "understand_culture"
   | "grow_career"
-  | "pass_exam"
-  | "learn_for_fun";
+  | "pass_exams";
 
-export type LearningStyleId = "practice" | "visual" | "listening" | "reading_writing" | "mixed";
+export type LearningStyleId = "struggle_a_lot" | "could_be_better" | "pretty_confident";
 
-export type StruggleId = "too_old" | "takes_too_long" | "failed_before" | "distracted";
+export type StruggleId =
+  | "takes_too_long"
+  | "forget_what_i_learn"
+  | "afraid_to_speak_mistakes"
+  | "not_enough_time"
+  | "boring_or_distracted"
+  | "none_believe_can_do_it";
 
 export type BobAnswer = "yes" | "no";
 
@@ -40,7 +47,7 @@ export type OnboardingAnswers = {
   age: AgeBracket | null;
   level: LanguageLevel | null;
   goals: GoalId[];
-  learningStyle: LearningStyleId[];
+  learningStyle: LearningStyleId | null;
   struggles: StruggleId[];
   bob: BobAnswer | null;
   email: string;
@@ -54,6 +61,7 @@ export type OnboardingStepId =
   | "goals"
   | "summaryLadder"
   | "learningStyle"
+  | "summaryStruggle"
   | "struggles"
   | "summaryThanksA"
   | "bobHeard"
@@ -72,6 +80,7 @@ export const stepOrder: OnboardingStepId[] = [
   "goals",
   "summaryLadder",
   "learningStyle",
+  "summaryStruggle",
   "struggles",
   "summaryThanksA",
   "bobHeard",
@@ -85,6 +94,7 @@ export function isSummaryStep(stepId: OnboardingStepId): boolean {
   return (
     stepId === "summaryMap" ||
     stepId === "summaryLadder" ||
+    stepId === "summaryStruggle" ||
     stepId === "summaryThanksA" ||
     stepId === "summaryThanksB"
   );
@@ -107,6 +117,8 @@ export function questionProgressForStep(stepId: OnboardingStepId): { current: nu
     case "summaryLadder":
       return { current: 4, total };
     case "learningStyle":
+      return { current: 5, total };
+    case "summaryStruggle":
       return { current: 5, total };
     case "struggles":
       return { current: 6, total };

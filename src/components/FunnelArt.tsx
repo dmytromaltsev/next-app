@@ -2,19 +2,32 @@
 
 import Image from "next/image";
 
+/** Matches `public/worldmap-summary.png`. */
+const MAP_W = 1483;
+const MAP_H = 799;
+
+/** `public/ladder-summary2.webp` */
+const LADDER_W = 1280;
+const LADDER_H = 853;
+
+/** `public/struggle-summary3.png` (portrait) */
+const STRUGGLE_SUMMARY_W = 853;
+const STRUGGLE_SUMMARY_H = 1280;
+
 export function WorldMapIllustration() {
   return (
     <div
-      className="mx-auto w-full max-w-xl overflow-hidden rounded-2xl border border-funnel-border bg-funnel-surface shadow-sm sm:max-w-2xl"
+      className="mx-auto w-full max-w-xl sm:max-w-2xl"
       role="img"
       aria-label="World map with learner locations across the globe"
     >
       <Image
-        src="/world-map-summary.png"
+        src="/worldmap-summary.png"
         alt="World map with pins showing learners worldwide"
-        width={1024}
-        height={551}
-        className="h-auto w-full"
+        width={MAP_W}
+        height={MAP_H}
+        className="h-auto w-full rounded-2xl"
+        sizes="(max-width: 640px) 100vw, 672px"
         priority
       />
     </div>
@@ -23,15 +36,41 @@ export function WorldMapIllustration() {
 
 export function LadderIllustration() {
   return (
-    <div className="mx-auto flex w-full max-w-xs justify-center py-2" role="img" aria-label="Ladder toward a goal">
-      <svg width="120" height="160" viewBox="0 0 120 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="44" y="8" width="32" height="12" rx="4" fill="#fde68a" stroke="#ca8a04" strokeWidth="1.5" />
-        <path d="M52 20v132M68 20v132" stroke="#3454a1" strokeWidth="4" strokeLinecap="round" />
-        {[36, 56, 76, 96, 116].map((y) => (
-          <line key={y} x1="48" y1={y} x2="72" y2={y} stroke="#93b4c8" strokeWidth="3" strokeLinecap="round" />
-        ))}
-        <circle cx="60" cy="14" r="4" fill="#fef9c3" />
-      </svg>
+    <div
+      className="mx-auto w-full max-w-xl sm:max-w-2xl"
+      role="img"
+      aria-label="Ladder illustrating progress toward your language goals"
+    >
+      <Image
+        src="/ladder-summary2.webp"
+        alt="Ladder illustrating progress toward your language goals"
+        width={LADDER_W}
+        height={LADDER_H}
+        className="h-auto w-full rounded-2xl"
+        sizes="(max-width: 640px) 100vw, 672px"
+      />
+    </div>
+  );
+}
+
+export function StruggleSummaryIllustration() {
+  return (
+    <div
+      className="relative mx-auto w-full max-w-md overflow-hidden rounded-2xl sm:max-w-lg"
+      style={{
+        aspectRatio: `${STRUGGLE_SUMMARY_W} / ${STRUGGLE_SUMMARY_H}`,
+        maxHeight: "min(52vh, 640px)",
+      }}
+      role="img"
+      aria-label="Illustration about learning method and progress"
+    >
+      <Image
+        src="/struggle-summary3.png"
+        alt="Illustration about learning method and progress"
+        fill
+        className="object-contain object-top [clip-path:inset(10px_0_0_0)]"
+        sizes="(max-width: 640px) 100vw, 512px"
+      />
     </div>
   );
 }

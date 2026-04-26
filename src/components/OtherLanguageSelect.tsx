@@ -1,5 +1,6 @@
 "use client";
 
+import { funnelOptionTypeClass } from "@/components/controls";
 import { OTHER_LANGUAGES } from "@/lib/onboarding/otherLanguages";
 
 export function OtherLanguageSelect({
@@ -18,8 +19,9 @@ export function OtherLanguageSelect({
           onChange(v === "" ? null : v);
         }}
         className={[
-          "h-12 w-full cursor-pointer appearance-none rounded-xl border border-funnel-border bg-funnel-surface py-3 pl-4 pr-11 text-base outline-none transition",
-          value ? "font-medium text-funnel-ink" : "text-funnel-muted",
+          "h-14 w-full min-h-14 cursor-pointer appearance-none rounded-xl border border-funnel-border bg-funnel-surface py-3 pl-4 pr-11 font-inherit outline-none transition",
+          funnelOptionTypeClass,
+          value ? "text-funnel-ink" : "text-funnel-muted",
           "focus:border-funnel-primary focus:ring-2 focus:ring-funnel-primary/15",
         ].join(" ")}
         aria-label="Other languages"

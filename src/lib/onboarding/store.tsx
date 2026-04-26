@@ -12,7 +12,7 @@ const initialAnswers: OnboardingAnswers = {
   age: null,
   level: null,
   goals: [],
-  learningStyle: [],
+  learningStyle: null,
   struggles: [],
   bob: null,
   email: "",

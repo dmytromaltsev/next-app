@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { languageLevelLabel, resolvedLanguageDisplay } from "@/lib/onboarding/copy";
-import type { OnboardingAnswers } from "@/lib/onboarding/types";
+import type { LearningStyleId, OnboardingAnswers } from "@/lib/onboarding/types";
 
 function requiredEnv(name: string) {
   const v = process.env[name];
@@ -16,7 +16,7 @@ function formatTelegramMessage(a: OnboardingAnswers) {
     `Age: ${a.age ?? "-"}`,
     `Level: ${languageLevelLabel(a.level)}`,
     `Goals: ${a.goals.length ? a.goals.join(", ") : "-"}`,
-    `Learning style: ${a.learningStyle.length ? a.learningStyle.join(", ") : "-"}`,
+    `Learning skills: ${a.learningStyle ?? "-"}`,
     `Struggles: ${a.struggles.length ? a.struggles.join(", ") : "-"}`,
     `Heard about Bob: ${a.bob ?? "-"}`,
     "",
@@ -43,7 +43,12 @@ export async function POST(req: Request) {
       age: (b.age ?? null) as OnboardingAnswers["age"],
       level: (b.level ?? null) as OnboardingAnswers["level"],
       goals: Array.isArray(b.goals) ? (b.goals as OnboardingAnswers["goals"]) : [],
-      learningStyle: Array.isArray(b.learningStyle) ? (b.learningStyle as OnboardingAnswers["learningStyle"]) : [],
+      learningStyle: (() => {
+        const ls = b.learningStyle;
+        if (typeof ls === "string") return ls as LearningStyleId;
+        if (Array.isArray(ls) && ls[0]) return ls[0] as LearningStyleId;
+        return null;
+      })(),
       struggles: Array.isArray(b.struggles) ? (b.struggles as OnboardingAnswers["struggles"]) : [],
       bob: (b.bob ?? null) as OnboardingAnswers["bob"],
       email: String(b.email ?? ""),

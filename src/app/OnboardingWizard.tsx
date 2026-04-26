@@ -3,7 +3,7 @@
 import { Inter } from "next/font/google";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { LadderIllustration, WorldMapIllustration } from "@/components/FunnelArt";
+import { LadderIllustration, StruggleSummaryIllustration, WorldMapIllustration } from "@/components/FunnelArt";
 import { FunnelHeader } from "@/components/FunnelHeader";
 import {
   ChoiceGrid,
@@ -15,7 +15,12 @@ import {
 import { OtherLanguageSelect } from "@/components/OtherLanguageSelect";
 import { QuestionShell } from "@/components/QuestionShell";
 import { SegmentedProgressBar } from "@/components/SegmentedProgressBar";
-import { ageLabelForStats, resolvedLanguageDisplay } from "@/lib/onboarding/copy";
+import {
+  ageLabelForStats,
+  languageLevelLabel,
+  learnerCountForSummary,
+  resolvedLanguageDisplay,
+} from "@/lib/onboarding/copy";
 import { useOnboarding } from "@/lib/onboarding/store";
 import {
   isSummaryStep,
@@ -27,7 +32,7 @@ import {
 
 const quizSans = Inter({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -47,27 +52,35 @@ const LANGUAGE_OPTIONS: Array<{
   { value: "chinese", label: "Chinese", flag: "🇨🇳" },
 ];
 
-const LEVEL_SCALE_STEPS = 5;
-
-function LevelScaleBadge({ step }: { step: number }) {
-  return (
-    <span
-      className="flex h-10 min-w-[2.75rem] items-center justify-center rounded-lg border border-funnel-primary/30 bg-funnel-selected px-2 text-[11px] font-bold tabular-nums tracking-tight text-funnel-primary sm:min-w-[3rem] sm:text-xs"
+/** Question 3 (level): `0bar.svg` … `4bar.svg` left of label, lowest → highest proficiency. */
+const LEVEL_CHOICE_OPTIONS = [
+  { value: "elementary", label: "Elementary" },
+  { value: "beginner", label: "Beginner" },
+  { value: "pre_intermediate", label: "Pre-Intermediate" },
+  { value: "upper_intermediate", label: "Upper-Intermediate" },
+  { value: "advanced", label: "Advanced" },
+].map((opt, i) => ({
+  ...opt,
+  prefix: (
+    <img
+      src={`/${i}bar.svg`}
+      alt=""
+      width={28}
+      height={28}
+      className="h-7 w-7 shrink-0 object-contain"
       aria-hidden
-    >
-      {step}/{LEVEL_SCALE_STEPS}
-    </span>
-  );
-}
+    />
+  ),
+}));
 
 function headerTitle(stepId: OnboardingStepId): string {
-  if (stepId === "loading" || stepId === "email") return "Ruut";
+  if (stepId === "loading" || stepId === "email") return "AI language tutor";
   if (stepId === "goals" || stepId === "learningStyle" || stepId === "struggles") return "Your plan";
   return "My profile";
 }
 
 function isMultiSelectStep(stepId: OnboardingStepId) {
-  return stepId === "goals" || stepId === "learningStyle" || stepId === "struggles";
+  return stepId === "goals" || stepId === "struggles";
 }
 
 /** Single-choice steps: tap an option to continue (no Continue button). */
@@ -77,6 +90,7 @@ function isSingleSelectStep(stepId: OnboardingStepId, a: OnboardingAnswers) {
     stepId === "language" ||
     stepId === "age" ||
     stepId === "level" ||
+    stepId === "learningStyle" ||
     stepId === "bobHeard"
   );
 }
@@ -97,13 +111,14 @@ function canProceed(stepId: OnboardingStepId, a: OnboardingAnswers) {
       return a.level !== null;
     case "summaryMap":
     case "summaryLadder":
+    case "summaryStruggle":
     case "summaryThanksA":
     case "summaryThanksB":
       return true;
     case "goals":
       return a.goals.length >= 1;
     case "learningStyle":
-      return a.learningStyle.length >= 1;
+      return a.learningStyle !== null;
     case "struggles":
       return a.struggles.length >= 1;
     case "bobHeard":
@@ -136,7 +151,7 @@ function LoadingStep() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  const r = 88;
+  const r = 64;
   const circumference = 2 * Math.PI * r;
   const dashOffset = circumference * (1 - pct / 100);
 
@@ -144,35 +159,37 @@ function LoadingStep() {
     <div className="mx-auto flex w-full max-w-md flex-col items-center px-1">
       <h2 className="sr-only">Building your plan</h2>
 
-      <div className="relative mx-auto aspect-square w-[min(100%,220px)]">
+      <div className="relative mx-auto aspect-square w-[min(100%,160px)] sm:w-[min(100%,170px)]">
         <svg className="h-full w-full -rotate-90" viewBox="0 0 200 200" aria-hidden>
-          <circle cx="100" cy="100" r={r} fill="none" className="stroke-funnel-track" strokeWidth="14" />
+          <circle cx="100" cy="100" r={r} fill="none" className="stroke-funnel-track" strokeWidth="12" />
           <circle
             cx="100"
             cy="100"
             r={r}
             fill="none"
             className="stroke-funnel-primary"
-            strokeWidth="14"
+            strokeWidth="12"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={dashOffset}
           />
         </svg>
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <span className="text-[2.35rem] font-bold leading-none tracking-tight text-funnel-primary">{pct}%</span>
+          <span className="text-[1.65rem] font-bold leading-none tracking-tight text-funnel-primary sm:text-[1.85rem]">
+            {pct}%
+          </span>
         </div>
       </div>
 
-      <p className="mt-8 max-w-sm text-center text-base font-medium leading-snug text-funnel-ink">
+      <p className="mt-6 max-w-sm text-center text-base font-medium leading-snug text-funnel-ink">
         Creating your Personalized Learning Plan
       </p>
 
-      <div className="mt-10 text-center">
-        <p className="text-[1.35rem] font-bold leading-tight text-funnel-primary sm:text-2xl">
-          Over 500&nbsp;000 people
+      <div className="mt-8 text-center">
+        <p className="text-[1.2rem] font-bold leading-tight text-funnel-primary sm:text-xl">
+          Over 800&nbsp;000 people
         </p>
-        <p className="mt-1 text-base font-normal text-funnel-ink">have chosen Ruut</p>
+        <p className="mt-1 text-base font-normal text-funnel-ink">have chosen our AI language tutor app</p>
       </div>
 
       <div className="mt-10 w-full rounded-2xl bg-neutral-100 px-4 py-4 text-left sm:px-5 sm:py-5">
@@ -269,11 +286,13 @@ export function OnboardingWizard() {
       case "level":
         return `What's your ${resolvedLanguageDisplay(a)} level?`;
       case "goals":
-        return "What goals do you have?";
+        return "What are your language goals?";
       case "summaryLadder":
         return "You're making progress already!";
       case "learningStyle":
-        return "What is your learning style?";
+        return "How do you feel about your learning skills?";
+      case "summaryStruggle":
+        return "";
       case "struggles":
         return "Do any of these sound familiar?";
       case "summaryThanksA":
@@ -292,29 +311,61 @@ export function OnboardingWizard() {
 
   const subtitleForStep = (): ReactNode => {
     switch (stepId) {
+      case "summaryMap": {
+        const rawCount = learnerCountForSummary(a.age, a.level, a.language, a.languageOther);
+        const countWithZeros = Math.floor(rawCount / 100) * 100;
+        const count = countWithZeros.toLocaleString("en-US");
+        const ageL = ageLabelForStats(a.age);
+        const lang = resolvedLanguageDisplay(a);
+        const levelLabel = a.level ? languageLevelLabel(a.level) : "Language";
+        const useBeginnersWord = a.level === "elementary" || a.level === "beginner";
+        return (
+          <div className="mx-auto w-full max-w-xl text-center">
+            <p className="m-0">
+              <strong className="block text-4xl font-bold tabular-nums leading-[1.05] tracking-tight text-funnel-primary sm:text-5xl sm:leading-[1.05]">
+                {count}
+              </strong>
+            </p>
+            <p className="m-0 mt-2 text-pretty sm:mt-3">
+              {useBeginnersWord ? (
+                <strong className="font-bold text-funnel-primary">Beginners</strong>
+              ) : (
+                <>
+                  <strong className="font-bold text-funnel-primary">{levelLabel}</strong>
+                  <span className="text-slate-600"> learners </span>
+                </>
+              )}
+              <span className="text-slate-600">{useBeginnersWord ? " aged " : "aged "}</span>
+              <strong className="font-bold tabular-nums text-funnel-primary">{ageL}</strong>
+              <span className="text-slate-600"> are already improving their </span>
+              <strong className="font-bold text-funnel-primary">{lang}</strong>
+              <span className="text-slate-600"> with us</span>
+            </p>
+          </div>
+        );
+      }
       case "age":
-        return "We only use age to personalize your plan.";
+        return "We only use age to personalize your plan";
       case "goals":
-      case "learningStyle":
       case "struggles":
-        return "Select all that apply.";
+        return "Select all that apply";
       case "summaryLadder":
         return (
-          <p className="text-base leading-relaxed">
-            <span className="text-funnel-muted">Science shows that </span>
-            <strong className="font-bold text-funnel-accent">setting clear goals</strong>
-            <span className="text-funnel-muted"> makes you </span>
-            <strong className="font-bold text-funnel-accent">3× more likely</strong>
-            <span className="text-funnel-muted"> to meet them. Give yourself a mini high five.</span>
+          <p className="leading-[1.6] text-slate-600 antialiased">
+            <span>Science shows that </span>
+            <strong className="font-semibold text-funnel-primary">setting clear goals</strong>
+            <span> makes you </span>
+            <strong className="font-semibold text-funnel-primary">3× more likely</strong>
+            <span> to meet them — give yourself a mini high five</span>
           </p>
         );
       case "summaryThanksA":
       case "summaryThanksB":
         return (
-          <p className="text-base leading-relaxed">
-            <span className="text-funnel-muted">Our program is developed by </span>
-            <strong className="font-bold text-funnel-accent">professionals</strong>
-            <span className="text-funnel-muted"> to match how you learn best.</span>
+          <p className="leading-[1.6] text-slate-600 antialiased">
+            <span>Our program is developed by </span>
+            <strong className="font-semibold text-funnel-primary">professionals</strong>
+            <span> to match how you learn best</span>
           </p>
         );
       default:
@@ -324,20 +375,18 @@ export function OnboardingWizard() {
 
   const primaryCta = "Continue";
 
+  /** Invisible title keeps first-summary subtitle vertical position (no visible title). */
   const shellTitle: ReactNode =
     stepId === "summaryMap" ? (
-      <>
-        <span className="font-normal text-funnel-muted">176,372 people aged </span>
-        <strong className="font-bold text-funnel-accent">{ageLabelForStats(a.age)}</strong>
-        <span className="font-normal text-funnel-muted"> are already improving their </span>
-        <strong className="font-bold text-funnel-accent">{resolvedLanguageDisplay(a)}</strong>
-        <span className="font-normal text-funnel-muted"> with us.</span>
-      </>
+      <span className="invisible select-none text-pretty text-2xl font-bold leading-tight tracking-tight sm:text-[1.65rem]" aria-hidden>
+        .
+      </span>
     ) : (
       titleForStep()
     );
 
-  const shellSubtitle = stepId === "summaryMap" || stepId === "email" ? undefined : subtitleForStep();
+  const shellSubtitle =
+    stepId === "email" || stepId === "summaryStruggle" ? undefined : subtitleForStep();
 
   if (emailSent) {
     return (
@@ -387,9 +436,10 @@ export function OnboardingWizard() {
         <QuestionShell
           stepKey={stepId}
           align={summary || multi || stepId === "loading" ? "center" : "start"}
+          tightTitleToContent={false}
           title={shellTitle}
           subtitle={shellSubtitle}
-          hideTitleArea={stepId === "loading" || stepId === "email"}
+          hideTitleArea={stepId === "loading" || stepId === "email" || stepId === "summaryStruggle"}
         >
           {stepId === "language" ? (
             <div className="space-y-4">
@@ -435,17 +485,15 @@ export function OnboardingWizard() {
             <ChoiceGrid
               value={a.level ?? ""}
               onChange={(v) => dispatch({ type: "answerAndNext", key: "level", value: v as OnboardingAnswers["level"] })}
-              options={[
-                { value: "elementary", label: "Elementary", prefix: <LevelScaleBadge step={1} /> },
-                { value: "beginner", label: "Beginner", prefix: <LevelScaleBadge step={2} /> },
-                { value: "pre_intermediate", label: "Pre-Intermediate", prefix: <LevelScaleBadge step={3} /> },
-                { value: "upper_intermediate", label: "Upper-Intermediate", prefix: <LevelScaleBadge step={4} /> },
-                { value: "advanced", label: "Advanced", prefix: <LevelScaleBadge step={5} /> },
-              ]}
+              options={LEVEL_CHOICE_OPTIONS}
             />
           ) : null}
 
-          {stepId === "summaryMap" ? <WorldMapIllustration /> : null}
+          {stepId === "summaryMap" ? (
+            <div className="-mt-[30px] w-full">
+              <WorldMapIllustration />
+            </div>
+          ) : null}
 
           {stepId === "goals" ? (
             <MultiChoiceGrid
@@ -454,12 +502,13 @@ export function OnboardingWizard() {
               onChange={(v) => dispatch({ type: "answer", key: "goals", value: v })}
               options={[
                 { value: "speak_confidently", label: "Speak confidently" },
+                { value: "become_fluent", label: "Become fluent" },
                 { value: "travel_easily", label: "Travel easily" },
-                { value: "understand_movies_music", label: "Understand movies & music" },
                 { value: "watch_movies", label: "Watch movies" },
-                { value: "grow_career", label: "Grow my career" },
-                { value: "pass_exam", label: "Pass an exam" },
-                { value: "learn_for_fun", label: "Learn for fun" },
+                { value: "enjoy_music", label: "Enjoy music" },
+                { value: "understand_culture", label: "Understand culture" },
+                { value: "grow_career", label: "Grow career" },
+                { value: "pass_exams", label: "Pass exams" },
               ]}
             />
           ) : null}
@@ -467,17 +516,29 @@ export function OnboardingWizard() {
           {stepId === "summaryLadder" ? <LadderIllustration /> : null}
 
           {stepId === "learningStyle" ? (
-            <MultiChoiceGrid
-              values={a.learningStyle}
-              onChange={(v) => dispatch({ type: "answer", key: "learningStyle", value: v })}
+            <ChoiceGrid
+              value={a.learningStyle ?? ""}
+              onChange={(v) =>
+                dispatch({ type: "answerAndNext", key: "learningStyle", value: v as OnboardingAnswers["learningStyle"] })
+              }
               options={[
-                { value: "practice", label: "Practice & exercises" },
-                { value: "visual", label: "Visual (images & videos)" },
-                { value: "listening", label: "Listening" },
-                { value: "reading_writing", label: "Reading & writing" },
-                { value: "mixed", label: "Mixed" },
+                { value: "struggle_a_lot", label: "I struggle a lot" },
+                { value: "could_be_better", label: "Could be better" },
+                { value: "pretty_confident", label: "Pretty confident" },
               ]}
             />
+          ) : null}
+
+          {stepId === "summaryStruggle" ? (
+            <div className="flex w-full max-w-xl flex-col items-center sm:max-w-2xl">
+              <p className="mt-5 max-w-xl text-pretty text-center text-lg font-normal leading-[1.65] tracking-tight text-slate-600 antialiased sm:mt-6 sm:text-xl sm:leading-[1.7]">
+                <span className="font-semibold text-funnel-primary">If learning a language feels hard</span>, it’s
+                usually not you — <span className="font-semibold text-funnel-primary">it’s the method</span>. The right
+                approach makes progress <span className="font-semibold text-funnel-primary">feel natural</span>, not
+                frustrating
+              </p>
+              <StruggleSummaryIllustration />
+            </div>
           ) : null}
 
           {stepId === "struggles" ? (
@@ -485,10 +546,12 @@ export function OnboardingWizard() {
               values={a.struggles}
               onChange={(v) => dispatch({ type: "answer", key: "struggles", value: v })}
               options={[
-                { value: "too_old", label: "“I'm too old to learn a new language”" },
-                { value: "takes_too_long", label: "“It takes too long to become fluent”" },
-                { value: "failed_before", label: "“I've failed before, why would this be different?”" },
-                { value: "distracted", label: "“I easily get distracted when learning”" },
+                { value: "takes_too_long", label: "It takes too long to become fluent" },
+                { value: "forget_what_i_learn", label: "I forget what I learn" },
+                { value: "afraid_to_speak_mistakes", label: "I'm afraid to speak and make mistakes" },
+                { value: "not_enough_time", label: "I don't have enough time" },
+                { value: "boring_or_distracted", label: "It's boring or I get distracted" },
+                { value: "none_believe_can_do_it", label: "None of these — I believe I can do it!" },
               ]}
             />
           ) : null}

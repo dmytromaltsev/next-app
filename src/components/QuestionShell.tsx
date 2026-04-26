@@ -12,6 +12,8 @@ export function QuestionShell({
   titleAs = "h1",
   align = "start",
   hideTitleArea = false,
+  /** Less space between title block and main content (e.g. summary hero + image). */
+  tightTitleToContent = false,
 }: {
   stepKey: string;
   title: React.ReactNode;
@@ -22,6 +24,7 @@ export function QuestionShell({
   align?: "start" | "center";
   /** When true, only children + optional footer render (e.g. full-bleed loader layout). */
   hideTitleArea?: boolean;
+  tightTitleToContent?: boolean;
 }) {
   const TitleTag = titleAs;
   const isCenter = align === "center";
@@ -37,7 +40,13 @@ export function QuestionShell({
           className="flex min-h-0 w-full flex-col"
         >
           {hideTitleArea ? null : (
-            <div className={["flex flex-col gap-2", isCenter ? "items-center text-center" : ""].join(" ")}>
+            <div
+              className={[
+                "flex flex-col",
+                tightTitleToContent ? "relative z-10 gap-0" : "gap-2",
+                isCenter ? "items-center text-center" : "",
+              ].join(" ")}
+            >
               <TitleTag
                 className={[
                   "text-pretty text-2xl font-bold leading-tight tracking-tight text-funnel-ink sm:text-[1.65rem]",
@@ -49,7 +58,7 @@ export function QuestionShell({
               {subtitle ? (
                 <div
                   className={[
-                    "max-w-xl text-pretty text-sm leading-relaxed text-funnel-muted sm:text-[15px] sm:leading-relaxed",
+                    "max-w-xl text-pretty text-lg leading-[1.6] tracking-normal text-slate-600 antialiased sm:text-xl sm:leading-[1.62]",
                     isCenter ? "text-center" : "",
                   ].join(" ")}
                 >
@@ -61,7 +70,11 @@ export function QuestionShell({
 
           <div
             className={[
-              hideTitleArea ? "mt-0" : "mt-6 sm:mt-7",
+              hideTitleArea
+                ? "mt-0"
+                : tightTitleToContent
+                  ? "relative z-0 -mt-[30px]"
+                  : "mt-6 sm:mt-7",
               "flex-1",
               isCenter ? "flex flex-col items-center" : "",
             ].join(" ")}
