@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { languageLevelLabel, resolvedLanguageDisplay } from "@/lib/onboarding/copy";
+import { formatTelegramSubmissionText } from "@/lib/onboarding/copy";
 import type {
   DailyTimeCommitmentId,
   LearningMediumId,
@@ -11,26 +11,6 @@ function requiredEnv(name: string) {
   const v = process.env[name];
   if (!v) throw new Error(`Missing required env var: ${name}`);
   return v;
-}
-
-function formatTelegramMessage(a: OnboardingAnswers) {
-  const lines = [
-    "🌍 New language funnel submission",
-    "",
-    `Language: ${resolvedLanguageDisplay(a)}`,
-    `Age: ${a.age ?? "-"}`,
-    `Level: ${languageLevelLabel(a.level)}`,
-    `Goals: ${a.goals.length ? a.goals.join(", ") : "-"}`,
-    `Learning skills: ${a.learningStyle ?? "-"}`,
-    `Learning style (formats): ${a.learningMediums.length ? a.learningMediums.join(", ") : "-"}`,
-    `Struggles: ${a.struggles.length ? a.struggles.join(", ") : "-"}`,
-    `Heard about Bob: ${a.bob ?? "-"}`,
-    `Daily time: ${a.dailyTimeCommitment ?? "-"}`,
-    "",
-    `Email: ${a.email || "-"}`,
-  ];
-
-  return lines.join("\n");
 }
 
 export async function POST(req: Request) {
@@ -69,7 +49,7 @@ export async function POST(req: Request) {
       email: String(b.email ?? ""),
     };
 
-    const text = formatTelegramMessage(answers);
+    const text = formatTelegramSubmissionText(answers);
 
     const telegramRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",

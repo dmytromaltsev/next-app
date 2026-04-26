@@ -1,5 +1,16 @@
 import { OTHER_LANGUAGES } from "./otherLanguages";
-import type { AgeBracket, LanguageLevel, OnboardingAnswers, TargetLanguage } from "./types";
+import type {
+  AgeBracket,
+  BobAnswer,
+  DailyTimeCommitmentId,
+  GoalId,
+  LanguageLevel,
+  LearningMediumId,
+  LearningStyleId,
+  OnboardingAnswers,
+  StruggleId,
+  TargetLanguage,
+} from "./types";
 
 const OTHER_LABEL = Object.fromEntries(OTHER_LANGUAGES.map((o) => [o.value, o.label])) as Record<string, string>;
 
@@ -122,4 +133,80 @@ export function indefiniteArticleForWord(word: string): "a" | "an" {
 export function languageLevelLabel(level: LanguageLevel | null): string {
   if (!level) return "-";
   return LEVEL_LABEL[level];
+}
+
+const GOAL_ANSWER_LABEL: Record<GoalId, string> = {
+  speak_confidently: "Speak confidently",
+  become_fluent: "Become fluent",
+  travel_easily: "Travel easily",
+  watch_movies: "Watch movies",
+  enjoy_music: "Enjoy music",
+  understand_culture: "Understand culture",
+  grow_career: "Grow career",
+  pass_exams: "Pass exams",
+};
+
+const STRUGGLE_ANSWER_LABEL: Record<StruggleId, string> = {
+  takes_too_long: "It takes too long to become fluent",
+  forget_what_i_learn: "I forget what I learn",
+  afraid_to_speak_mistakes: "I'm afraid to speak and make mistakes",
+  not_enough_time: "I don't have enough time",
+  boring_or_distracted: "It's boring or I get distracted",
+  none_believe_can_do_it: "None of these — I believe I can do it!",
+};
+
+const MEDIUM_ANSWER_LABEL: Record<LearningMediumId, string> = {
+  practice_exercises: "Practice exercises",
+  images_videos: "Images & Videos",
+  listening: "Listening",
+  reading_writing: "Reading & Writing",
+};
+
+const LEARNING_STYLE_ANSWER_LABEL: Record<LearningStyleId, string> = {
+  struggle_a_lot: "I struggle a lot",
+  could_be_better: "Could be better",
+  pretty_confident: "Pretty confident",
+};
+
+const BOB_ANSWER_LABEL: Record<BobAnswer, string> = {
+  yes: "Yes",
+  no: "No",
+};
+
+const DAILY_TIME_ANSWER_LABEL: Record<DailyTimeCommitmentId, string> = {
+  up_to_5_mins: "up to 5 mins",
+  "5_to_15_mins": "5–15 mins",
+  more_than_15_mins: "more than 15 mins",
+};
+
+function joinAnswerLabels<T extends string>(ids: readonly T[], map: Record<T, string>): string {
+  if (ids.length === 0) return "-";
+  return ids.map((id) => map[id] ?? id).join(", ");
+}
+
+/** Plain-text Telegram body: question copy matches the funnel; answers are human-readable labels. */
+export function formatTelegramSubmissionText(a: OnboardingAnswers): string {
+  const lang = resolvedLanguageDisplay(a);
+  const ageLine = a.age !== null ? AGE_LABEL[a.age] : "-";
+  const lines = [
+    "🌍 New language funnel submission",
+    "",
+    `1. What language would you like to learn?: ${lang}`,
+    `2. What is your age?: ${ageLine}`,
+    `3. What's your ${lang} level?: ${languageLevelLabel(a.level)}`,
+    `4. What are your language goals?: ${joinAnswerLabels(a.goals, GOAL_ANSWER_LABEL)}`,
+    `5. How do you feel about your learning skills?: ${
+      a.learningStyle !== null ? LEARNING_STYLE_ANSWER_LABEL[a.learningStyle] : "-"
+    }`,
+    `6. Do any of these sound familiar?: ${joinAnswerLabels(a.struggles, STRUGGLE_ANSWER_LABEL)}`,
+    `7. Did you hear about our AI Tutor from a language professional?: ${
+      a.bob !== null ? BOB_ANSWER_LABEL[a.bob] : "-"
+    }`,
+    `8. What is your learning style?: ${joinAnswerLabels(a.learningMediums, MEDIUM_ANSWER_LABEL)}`,
+    `9. How much time can you spend learning daily?: ${
+      a.dailyTimeCommitment !== null ? DAILY_TIME_ANSWER_LABEL[a.dailyTimeCommitment] : "-"
+    }`,
+    `10. Enter your email to get your personalized Language Learning Plan: ${a.email.trim() || "-"}`,
+  ];
+  return lines.join("\n");
 }

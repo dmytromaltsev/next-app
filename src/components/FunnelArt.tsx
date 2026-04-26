@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 
-/** Matches `public/worldmap_sumaryOLA.png`. */
+/** Matches `public/worldmap_sumaryOLA.webp` (1536×1024). */
 const MAP_W = 1536;
 const MAP_H = 1024;
 
@@ -10,15 +10,15 @@ const MAP_H = 1024;
 const LADDER_W = 1280;
 const LADDER_H = 853;
 
-/** `public/ai_coach_summary.png` */
+/** `public/ai_coach_summary.webp` */
 const AI_COACH_SUMMARY_W = 1536;
 const AI_COACH_SUMMARY_H = 1024;
 
-/** `public/ai_coach_vs_traditional1.png` */
+/** `public/ai_coach_vs_traditional1.webp` */
 const AI_COACH_VS_TRADITIONAL_W = 1536;
 const AI_COACH_VS_TRADITIONAL_H = 1024;
 
-/** `public/struggle-summary3.png` (portrait) */
+/** `public/struggle-summary3.webp` (portrait) */
 const STRUGGLE_SUMMARY_W = 853;
 const STRUGGLE_SUMMARY_H = 1280;
 
@@ -30,7 +30,7 @@ export function WorldMapIllustration() {
       aria-label="World map with learner locations across the globe"
     >
       <Image
-        src="/worldmap_sumaryOLA.png"
+        src="/worldmap_sumaryOLA.webp"
         alt="World map with pins showing learners worldwide"
         width={MAP_W}
         height={MAP_H}
@@ -69,7 +69,7 @@ export function AiCoachSummaryIllustration() {
       aria-label="AI Language Tutor illustration"
     >
       <Image
-        src="/ai_coach_summary.png"
+        src="/ai_coach_summary.webp"
         alt="AI Language Tutor illustration"
         width={AI_COACH_SUMMARY_W}
         height={AI_COACH_SUMMARY_H}
@@ -88,7 +88,7 @@ export function AiCoachVsTraditionalIllustration() {
       aria-label="AI coach compared to traditional learning illustration"
     >
       <Image
-        src="/ai_coach_vs_traditional1.png"
+        src="/ai_coach_vs_traditional1.webp"
         alt="AI coach compared to traditional learning"
         width={AI_COACH_VS_TRADITIONAL_W}
         height={AI_COACH_VS_TRADITIONAL_H}
@@ -111,7 +111,7 @@ export function StruggleSummaryIllustration() {
       aria-label="Illustration about learning method and progress"
     >
       <Image
-        src="/struggle-summary3.png"
+        src="/struggle-summary3.webp"
         alt="Illustration about learning method and progress"
         fill
         className="object-contain object-top [clip-path:inset(10px_0_0_0)]"

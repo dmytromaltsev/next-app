@@ -1,8 +1,26 @@
 "use client";
 
 import React, { createContext, useContext, useMemo, useReducer } from "react";
-import type { OnboardingAction, OnboardingAnswers, OnboardingState } from "./types";
+import type { OnboardingAction, OnboardingAnswers, OnboardingState, OnboardingStepId } from "./types";
 import { isSummaryStep, stepOrder } from "./types";
+
+/** After back, clear the step you land on if it uses single-tap choice (so nothing stays pre-selected). */
+function answersAfterLandingOnStep(answers: OnboardingAnswers, stepId: OnboardingStepId): OnboardingAnswers {
+  switch (stepId) {
+    case "language":
+      return { ...answers, language: null, languageOther: null };
+    case "age":
+      return { ...answers, age: null };
+    case "level":
+      return { ...answers, level: null };
+    case "learningStyle":
+      return { ...answers, learningStyle: null };
+    case "bobHeard":
+      return { ...answers, bob: null };
+    default:
+      return answers;
+  }
+}
 
 const TOTAL_STEPS = stepOrder.length;
 
@@ -39,7 +57,10 @@ function reducer(state: OnboardingState, action: OnboardingAction): OnboardingSt
       if (state.stepIndex <= 0) return { ...state, stepIndex: 0 };
       let i = state.stepIndex - 1;
       while (i >= 0 && isSummaryStep(stepOrder[i]!)) i -= 1;
-      return { ...state, stepIndex: clampStep(Math.max(0, i)) };
+      const newIndex = clampStep(Math.max(0, i));
+      const landedOn = stepOrder[newIndex]!;
+      const answers = answersAfterLandingOnStep(state.answers, landedOn);
+      return { ...state, stepIndex: newIndex, answers };
     }
     case "answer": {
       if (action.key === "languageOther") {

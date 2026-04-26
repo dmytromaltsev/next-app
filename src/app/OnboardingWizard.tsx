@@ -62,6 +62,35 @@ const THANK_YOU_Q_STEP_IDS = [
   "email",
 ] as const satisfies readonly OnboardingStepId[];
 
+type ThankYouNavStepId = (typeof THANK_YOU_Q_STEP_IDS)[number];
+
+/** Labels for thank-you nav jump buttons (aligned with funnel / Telegram question copy). */
+function thankYouNavQuestionLabel(id: ThankYouNavStepId, a: OnboardingAnswers): string {
+  const lang = resolvedLanguageDisplay(a);
+  switch (id) {
+    case "language":
+      return "What language would you like to learn?";
+    case "age":
+      return "What is your age?";
+    case "level":
+      return `What's your ${lang} level?`;
+    case "goals":
+      return "What are your language goals?";
+    case "learningStyle":
+      return "How do you feel about your learning skills?";
+    case "struggles":
+      return "Do any of these sound familiar?";
+    case "bobHeard":
+      return "Did you hear about our AI Tutor from a language professional?";
+    case "learningMediums":
+      return "What is your learning style?";
+    case "loading":
+      return "How much time can you spend learning daily?";
+    case "email":
+      return "Enter your email to get your personalized Language Learning Plan";
+  }
+}
+
 const LANGUAGE_OPTIONS: Array<{
   value: NonNullable<OnboardingAnswers["language"]>;
   label: string;
@@ -99,11 +128,32 @@ const LEVEL_CHOICE_OPTIONS = [
   ),
 }));
 
+/** Progress bar header copy for funnel question index 1…10 (matches `questionProgressForStep`). */
+function funnelSectionTitleForQuestionIndex(q: number): string {
+  if (q >= 1 && q <= 4) return "My Profile";
+  if (q >= 5 && q <= 6) return "Issues";
+  if (q >= 9 && q <= 10) return "My Personalized Plan";
+  return "AI Language Tutor";
+}
+
 function headerTitle(stepId: OnboardingStepId): string {
-  if (stepId === "loading" || stepId === "email" || stepId === "thankYouNav") return "AI Language Tutor";
-  if (stepId === "goals" || stepId === "learningStyle" || stepId === "struggles" || stepId === "learningMediums")
-    return "Your plan";
-  return "My profile";
+  return funnelSectionTitleForQuestionIndex(questionProgressForStep(stepId).current);
+}
+
+function thankYouNavSections(): { sectionTitle: string; entries: { id: ThankYouNavStepId; qIndex: number }[] }[] {
+  const sections: { sectionTitle: string; entries: { id: ThankYouNavStepId; qIndex: number }[] }[] = [];
+  for (let i = 0; i < THANK_YOU_Q_STEP_IDS.length; i++) {
+    const id = THANK_YOU_Q_STEP_IDS[i]!;
+    const qIndex = i + 1;
+    const sectionTitle = funnelSectionTitleForQuestionIndex(qIndex);
+    const prev = sections[sections.length - 1];
+    if (!prev || prev.sectionTitle !== sectionTitle) {
+      sections.push({ sectionTitle, entries: [{ id, qIndex }] });
+    } else {
+      prev.entries.push({ id, qIndex });
+    }
+  }
+  return sections;
 }
 
 function isMultiSelectStep(stepId: OnboardingStepId) {
@@ -693,7 +743,7 @@ export function OnboardingWizard() {
           </p>
         );
       case "thankYouNav":
-        return "Navigation to pages";
+        return "Click button to return to that question";
       default:
         return undefined;
     }
@@ -717,7 +767,7 @@ export function OnboardingWizard() {
   if (emailSent) {
     return (
       <div className={`${quizSans.className} flex min-h-dvh flex-col bg-funnel-canvas text-funnel-ink`}>
-        <FunnelHeader title="My profile" onBack={() => {}} showBack={false} />
+        <FunnelHeader title="AI Language Tutor" onBack={() => {}} showBack={false} />
         <div className="flex flex-1 flex-col items-center px-4 pb-8 pt-10">
           <div className="w-full max-w-lg text-center">
             <h2 className="text-2xl font-bold text-funnel-ink">You&apos;re all set</h2>
@@ -990,18 +1040,31 @@ export function OnboardingWizard() {
           ) : null}
 
           {stepId === "thankYouNav" ? (
-            <div className="mx-auto w-full max-w-md space-y-2.5">
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2">
-                {THANK_YOU_Q_STEP_IDS.map((id, i) => (
-                  <SecondaryButton
-                    key={id}
-                    className="!w-full min-w-0 justify-center px-2 text-sm sm:!w-full sm:text-base"
-                    onClick={() => dispatch({ type: "goTo", stepIndex: stepOrder.indexOf(id) })}
-                  >
-                    Q{i + 1}
-                  </SecondaryButton>
-                ))}
-              </div>
+            <div className="mx-auto w-full max-w-md space-y-4">
+              {thankYouNavSections().map((section) => (
+                <section
+                  key={section.sectionTitle}
+                  className="rounded-2xl border border-funnel-border bg-funnel-surface px-3 py-3 sm:px-4 sm:py-4"
+                >
+                  <h3 className="mb-2.5 border-b border-funnel-border pb-2 text-center text-sm font-bold text-funnel-ink sm:text-base">
+                    {section.sectionTitle}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2">
+                    {section.entries.map(({ id, qIndex }) => (
+                      <SecondaryButton
+                        key={id}
+                        className="!h-auto !w-full min-h-[52px] min-w-0 !items-start !justify-start whitespace-normal px-2 py-2.5 text-left text-[11px] font-medium leading-snug text-pretty text-funnel-ink sm:min-h-[56px] sm:!w-full sm:px-2.5 sm:text-xs sm:leading-snug"
+                        onClick={() => dispatch({ type: "goTo", stepIndex: stepOrder.indexOf(id) })}
+                      >
+                        <span className="flex w-full min-w-0 gap-1.5 sm:gap-2">
+                          <span className="shrink-0 font-semibold text-funnel-primary">Q{qIndex}</span>
+                          <span className="min-w-0 flex-1">{thankYouNavQuestionLabel(id, a)}</span>
+                        </span>
+                      </SecondaryButton>
+                    ))}
+                  </div>
+                </section>
+              ))}
             </div>
           ) : null}
         </QuestionShell>
