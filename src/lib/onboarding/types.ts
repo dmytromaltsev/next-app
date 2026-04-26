@@ -61,11 +61,9 @@ export type OnboardingStepId =
   | "goals"
   | "summaryLadder"
   | "learningStyle"
-  | "summaryStruggle"
   | "struggles"
-  | "summaryThanksA"
+  | "summaryStruggle"
   | "bobHeard"
-  | "summaryThanksB"
   | "loading"
   | "email";
 
@@ -80,11 +78,9 @@ export const stepOrder: OnboardingStepId[] = [
   "goals",
   "summaryLadder",
   "learningStyle",
-  "summaryStruggle",
   "struggles",
-  "summaryThanksA",
+  "summaryStruggle",
   "bobHeard",
-  "summaryThanksB",
   "loading",
   "email",
 ];
@@ -94,9 +90,7 @@ export function isSummaryStep(stepId: OnboardingStepId): boolean {
   return (
     stepId === "summaryMap" ||
     stepId === "summaryLadder" ||
-    stepId === "summaryStruggle" ||
-    stepId === "summaryThanksA" ||
-    stepId === "summaryThanksB"
+    stepId === "summaryStruggle"
   );
 }
 
@@ -118,15 +112,11 @@ export function questionProgressForStep(stepId: OnboardingStepId): { current: nu
       return { current: 4, total };
     case "learningStyle":
       return { current: 5, total };
-    case "summaryStruggle":
-      return { current: 5, total };
     case "struggles":
       return { current: 6, total };
-    case "summaryThanksA":
+    case "summaryStruggle":
       return { current: 6, total };
     case "bobHeard":
-      return { current: 7, total };
-    case "summaryThanksB":
       return { current: 7, total };
     case "loading":
       return { current: 8, total };

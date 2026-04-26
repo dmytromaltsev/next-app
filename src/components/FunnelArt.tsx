@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 
-/** Matches `public/worldmap-summary.png`. */
-const MAP_W = 1483;
-const MAP_H = 799;
+/** Matches `public/worldmap_sumaryOLA.png`. */
+const MAP_W = 1536;
+const MAP_H = 1024;
 
 /** `public/ladder-summary2.webp` */
 const LADDER_W = 1280;
@@ -22,7 +22,7 @@ export function WorldMapIllustration() {
       aria-label="World map with learner locations across the globe"
     >
       <Image
-        src="/worldmap-summary.png"
+        src="/worldmap_sumaryOLA.png"
         alt="World map with pins showing learners worldwide"
         width={MAP_W}
         height={MAP_H}

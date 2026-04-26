@@ -112,8 +112,6 @@ function canProceed(stepId: OnboardingStepId, a: OnboardingAnswers) {
     case "summaryMap":
     case "summaryLadder":
     case "summaryStruggle":
-    case "summaryThanksA":
-    case "summaryThanksB":
       return true;
     case "goals":
       return a.goals.length >= 1;
@@ -295,9 +293,6 @@ export function OnboardingWizard() {
         return "";
       case "struggles":
         return "Do any of these sound familiar?";
-      case "summaryThanksA":
-      case "summaryThanksB":
-        return "Thanks for sharing!";
       case "bobHeard":
         return "Did you hear about Bob from mentor or coach?";
       case "loading":
@@ -347,8 +342,13 @@ export function OnboardingWizard() {
       case "age":
         return "We only use age to personalize your plan";
       case "goals":
-      case "struggles":
         return "Select all that apply";
+      case "struggles":
+        return (
+          <span className="block text-base leading-[1.55] antialiased sm:text-lg sm:leading-[1.58]">
+            {"We use your barriers to help you overcome them"}
+          </span>
+        );
       case "summaryLadder":
         return (
           <p className="leading-[1.6] text-slate-600 antialiased">
@@ -357,15 +357,6 @@ export function OnboardingWizard() {
             <span> makes you </span>
             <strong className="font-semibold text-funnel-primary">3× more likely</strong>
             <span> to meet them — give yourself a mini high five</span>
-          </p>
-        );
-      case "summaryThanksA":
-      case "summaryThanksB":
-        return (
-          <p className="leading-[1.6] text-slate-600 antialiased">
-            <span>Our program is developed by </span>
-            <strong className="font-semibold text-funnel-primary">professionals</strong>
-            <span> to match how you learn best</span>
           </p>
         );
       default:
@@ -529,18 +520,6 @@ export function OnboardingWizard() {
             />
           ) : null}
 
-          {stepId === "summaryStruggle" ? (
-            <div className="flex w-full max-w-xl flex-col items-center sm:max-w-2xl">
-              <p className="mt-5 max-w-xl text-pretty text-center text-lg font-normal leading-[1.65] tracking-tight text-slate-600 antialiased sm:mt-6 sm:text-xl sm:leading-[1.7]">
-                <span className="font-semibold text-funnel-primary">If learning a language feels hard</span>, it’s
-                usually not you — <span className="font-semibold text-funnel-primary">it’s the method</span>. The right
-                approach makes progress <span className="font-semibold text-funnel-primary">feel natural</span>, not
-                frustrating
-              </p>
-              <StruggleSummaryIllustration />
-            </div>
-          ) : null}
-
           {stepId === "struggles" ? (
             <MultiChoiceGrid
               values={a.struggles}
@@ -554,6 +533,18 @@ export function OnboardingWizard() {
                 { value: "none_believe_can_do_it", label: "None of these — I believe I can do it!" },
               ]}
             />
+          ) : null}
+
+          {stepId === "summaryStruggle" ? (
+            <div className="flex w-full max-w-xl flex-col items-center sm:max-w-2xl">
+              <p className="mt-5 max-w-xl text-pretty text-center text-lg font-normal leading-[1.65] tracking-tight text-slate-600 antialiased sm:mt-6 sm:text-xl sm:leading-[1.7]">
+                <span className="font-semibold text-funnel-primary">If learning a language feels hard</span>, it’s
+                usually not you — <span className="font-semibold text-funnel-primary">it’s the method</span>. The right
+                approach makes progress <span className="font-semibold text-funnel-primary">feel natural</span>, not
+                frustrating
+              </p>
+              <StruggleSummaryIllustration />
+            </div>
           ) : null}
 
           {stepId === "bobHeard" ? (
