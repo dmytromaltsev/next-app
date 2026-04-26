@@ -1,8 +1,9 @@
 "use client";
 
 import { Inter } from "next/font/google";
+import Image from "next/image";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { MutableRefObject, ReactNode } from "react";
 import {
   AiCoachSummaryIllustration,
   AiCoachVsTraditionalIllustration,
@@ -117,13 +118,14 @@ const LEVEL_CHOICE_OPTIONS = [
 ].map((opt, i) => ({
   ...opt,
   prefix: (
-    <img
+    <Image
       src={`/${i}bar.svg`}
       alt=""
       width={28}
       height={28}
       className="h-7 w-7 shrink-0 object-contain"
       aria-hidden
+      unoptimized
     />
   ),
 }));
@@ -328,6 +330,18 @@ function loaderPhase(elapsedMs: number): 0 | 1 | 2 | 3 {
   return 3;
 }
 
+/** Module scope: avoids `react-hooks/purity` on `performance.now` inside component render scope. */
+function recordLoaderPauseClose(
+  pauseOpenWallRef: MutableRefObject<number | null>,
+  totalPauseMsRef: MutableRefObject<number>,
+): void {
+  const when = globalThis.performance.now();
+  if (pauseOpenWallRef.current !== null) {
+    totalPauseMsRef.current += when - pauseOpenWallRef.current;
+    pauseOpenWallRef.current = null;
+  }
+}
+
 function loaderStatusMessage(phase: 0 | 1 | 2 | 3, a: OnboardingAnswers): string {
   const lang = resolvedLanguageDisplay(a);
   const langTitle = lang === "your chosen" ? "Language" : lang;
@@ -363,11 +377,13 @@ function LoadingStep({
   onComplete: () => void;
 }) {
   const answersRef = useRef(answers);
-  answersRef.current = answers;
   const onDailyTimeRef = useRef(onDailyTime);
-  onDailyTimeRef.current = onDailyTime;
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+  useLayoutEffect(() => {
+    answersRef.current = answers;
+    onDailyTimeRef.current = onDailyTime;
+    onCompleteRef.current = onComplete;
+  });
 
   const [pct, setPct] = useState(0);
   const [statusText, setStatusText] = useState(() => loaderStatusMessage(0, answers));
@@ -382,28 +398,14 @@ function LoadingStep({
   const rafIdRef = useRef(0);
 
   const handlePickDailyTime = (v: DailyTimeCommitmentId) => {
-    const when = performance.now();
-    if (pauseOpenWallRef.current !== null) {
-      totalPauseMsRef.current += when - pauseOpenWallRef.current;
-      pauseOpenWallRef.current = null;
-    }
+    recordLoaderPauseClose(pauseOpenWallRef, totalPauseMsRef);
     setModalOpen(false);
     onDailyTimeRef.current(v);
   };
 
   useEffect(() => {
-    phaseRef.current = -1;
-    completedRef.current = false;
-    hit51Ref.current = false;
-    totalPauseMsRef.current = 0;
-    pauseOpenWallRef.current = null;
-    setModalOpen(false);
-    setPct(0);
-    setStatusText(loaderStatusMessage(0, answersRef.current));
-    setViewerFlag(flagEmojiFromRegionCode(viewerRegionFromNavigator()));
-
     const segs = buildLoaderSpeedSegments();
-    const start = performance.now();
+    let start = 0;
 
     function effectiveElapsed(now: number): number {
       const pOpen = pauseOpenWallRef.current;
@@ -451,7 +453,20 @@ function LoadingStep({
       rafIdRef.current = requestAnimationFrame(tick);
     }
 
-    rafIdRef.current = requestAnimationFrame(tick);
+    queueMicrotask(() => {
+      phaseRef.current = -1;
+      completedRef.current = false;
+      hit51Ref.current = false;
+      totalPauseMsRef.current = 0;
+      pauseOpenWallRef.current = null;
+      setModalOpen(false);
+      setPct(0);
+      setStatusText(loaderStatusMessage(0, answersRef.current));
+      setViewerFlag(flagEmojiFromRegionCode(viewerRegionFromNavigator()));
+      start = globalThis.performance.now();
+      rafIdRef.current = requestAnimationFrame(tick);
+    });
+
     return () => cancelAnimationFrame(rafIdRef.current);
   }, []);
 
@@ -576,7 +591,9 @@ export function OnboardingWizard() {
   const showFloatingContinue = stepId !== "loading" && !singleSelect;
 
   useEffect(() => {
-    if (stepId !== "email") setEmailFieldError(null);
+    if (stepId !== "email") {
+      queueMicrotask(() => setEmailFieldError(null));
+    }
   }, [stepId]);
 
   useLayoutEffect(() => {

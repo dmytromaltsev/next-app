@@ -36,7 +36,9 @@ export function EmailStepConfetti({ burstKey }: { burstKey: number }) {
   const [pieces, setPieces] = useState<Piece[]>([]);
 
   useEffect(() => {
-    setPieces(Array.from({ length: 72 }, (_, i) => randomPiece(i)));
+    queueMicrotask(() => {
+      setPieces(Array.from({ length: 72 }, (_, i) => randomPiece(i)));
+    });
   }, [burstKey]);
 
   if (pieces.length === 0) return null;
