@@ -7,16 +7,15 @@ import type {
   OnboardingAnswers,
 } from "@/lib/onboarding/types";
 
-function requiredEnv(name: string) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing required env var: ${name}`);
-  return v;
+function envTrim(name: string): string | undefined {
+  const v = process.env[name]?.trim();
+  return v || undefined;
 }
 
 export async function POST(req: Request) {
   try {
-    const token = requiredEnv("TELEGRAM_BOT_TOKEN");
-    const chatId = requiredEnv("TELEGRAM_CHAT_ID");
+    const token = envTrim("TELEGRAM_BOT_TOKEN");
+    const chatId = envTrim("TELEGRAM_CHAT_ID");
 
     const body = (await req.json().catch(() => null)) as { answers?: Partial<OnboardingAnswers> } | null;
     if (!body?.answers) {
@@ -50,6 +49,13 @@ export async function POST(req: Request) {
     };
 
     const text = formatTelegramSubmissionText(answers);
+
+    if (!token || !chatId) {
+      console.warn(
+        "[api/submit] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID unset; answers accepted but not sent to Telegram.",
+      );
+      return NextResponse.json({ ok: true, telegram: "skipped" as const });
+    }
 
     const telegramRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
