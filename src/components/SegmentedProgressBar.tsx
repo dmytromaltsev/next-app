@@ -4,8 +4,7 @@ export function SegmentedProgressBar({ value, max }: { value: number; max: numbe
   const safeMax = Math.max(1, max);
   const filled = Math.max(0, Math.min(safeMax, value));
   return (
-    <div className="flex w-full items-center gap-2">
-      <span className="h-1 w-1 shrink-0 rounded-full bg-funnel-ink" aria-hidden />
+    <div className="flex w-full items-center">
       <div className="flex min-w-0 flex-1 gap-1 sm:gap-1.5">
         {Array.from({ length: safeMax }, (_, i) => (
           <div

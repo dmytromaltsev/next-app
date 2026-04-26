@@ -30,6 +30,13 @@ export type GoalId =
 
 export type LearningStyleId = "struggle_a_lot" | "could_be_better" | "pretty_confident";
 
+/** Multiselect: preferred ways to learn (post-summary, before loading). */
+export type LearningMediumId =
+  | "practice_exercises"
+  | "images_videos"
+  | "listening"
+  | "reading_writing";
+
 export type StruggleId =
   | "takes_too_long"
   | "forget_what_i_learn"
@@ -40,6 +47,9 @@ export type StruggleId =
 
 export type BobAnswer = "yes" | "no";
 
+/** Daily study time (loader pop-up at ~51%). */
+export type DailyTimeCommitmentId = "up_to_5_mins" | "5_to_15_mins" | "more_than_15_mins";
+
 export type OnboardingAnswers = {
   language: TargetLanguage | null;
   /** Picked from “Other languages” list; `language` stays null when this is set. */
@@ -48,8 +58,11 @@ export type OnboardingAnswers = {
   level: LanguageLevel | null;
   goals: GoalId[];
   learningStyle: LearningStyleId | null;
+  learningMediums: LearningMediumId[];
   struggles: StruggleId[];
   bob: BobAnswer | null;
+  /** Set during loading step modal (~51% progress). */
+  dailyTimeCommitment: DailyTimeCommitmentId | null;
   email: string;
 };
 
@@ -64,11 +77,15 @@ export type OnboardingStepId =
   | "struggles"
   | "summaryStruggle"
   | "bobHeard"
+  | "summaryAiTutor"
+  | "summaryExpertsScience"
+  | "learningMediums"
   | "loading"
-  | "email";
+  | "email"
+  | "thankYouNav";
 
-/** Segments in the funnel progress bar (9 total, includes loading + email). */
-export const FUNNEL_PROGRESS_TOTAL = 9;
+/** Segments in the funnel progress bar (10 total). Summaries share the prior question’s segment count. */
+export const FUNNEL_PROGRESS_TOTAL = 10;
 
 export const stepOrder: OnboardingStepId[] = [
   "language",
@@ -81,8 +98,12 @@ export const stepOrder: OnboardingStepId[] = [
   "struggles",
   "summaryStruggle",
   "bobHeard",
+  "summaryAiTutor",
+  "summaryExpertsScience",
+  "learningMediums",
   "loading",
   "email",
+  "thankYouNav",
 ];
 
 /** Interstitial screens (not real questions); back skips these to the prior question. */
@@ -90,7 +111,10 @@ export function isSummaryStep(stepId: OnboardingStepId): boolean {
   return (
     stepId === "summaryMap" ||
     stepId === "summaryLadder" ||
-    stepId === "summaryStruggle"
+    stepId === "summaryStruggle" ||
+    stepId === "summaryAiTutor" ||
+    stepId === "summaryExpertsScience" ||
+    stepId === "thankYouNav"
   );
 }
 
@@ -118,10 +142,17 @@ export function questionProgressForStep(stepId: OnboardingStepId): { current: nu
       return { current: 6, total };
     case "bobHeard":
       return { current: 7, total };
-    case "loading":
+    case "summaryAiTutor":
+      return { current: 7, total };
+    case "summaryExpertsScience":
+      return { current: 7, total };
+    case "learningMediums":
       return { current: 8, total };
-    case "email":
+    case "loading":
       return { current: 9, total };
+    case "email":
+    case "thankYouNav":
+      return { current: 10, total };
   }
 }
 

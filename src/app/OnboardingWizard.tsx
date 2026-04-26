@@ -1,17 +1,25 @@
 "use client";
 
 import { Inter } from "next/font/google";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { LadderIllustration, StruggleSummaryIllustration, WorldMapIllustration } from "@/components/FunnelArt";
+import {
+  AiCoachSummaryIllustration,
+  AiCoachVsTraditionalIllustration,
+  LadderIllustration,
+  StruggleSummaryIllustration,
+  WorldMapIllustration,
+} from "@/components/FunnelArt";
 import { FunnelHeader } from "@/components/FunnelHeader";
 import {
   ChoiceGrid,
   LanguageChoiceGrid,
   MultiChoiceGrid,
   PrimaryButton,
+  SecondaryButton,
   TextInput,
 } from "@/components/controls";
+import { EmailStepConfetti } from "@/components/EmailStepConfetti";
 import { OtherLanguageSelect } from "@/components/OtherLanguageSelect";
 import { QuestionShell } from "@/components/QuestionShell";
 import { SegmentedProgressBar } from "@/components/SegmentedProgressBar";
@@ -26,6 +34,10 @@ import {
   isSummaryStep,
   questionProgressForStep,
   stepOrder,
+  type DailyTimeCommitmentId,
+  type GoalId,
+  type LearningMediumId,
+  type LearningStyleId,
   type OnboardingAnswers,
   type OnboardingStepId,
 } from "@/lib/onboarding/types";
@@ -35,6 +47,20 @@ const quizSans = Inter({
   weight: ["400", "500", "600", "700"],
   display: "swap",
 });
+
+/** Q1…Q10 → main questions + loader + email (summaries skipped). Indices resolved via `stepOrder`. */
+const THANK_YOU_Q_STEP_IDS = [
+  "language",
+  "age",
+  "level",
+  "goals",
+  "learningStyle",
+  "struggles",
+  "bobHeard",
+  "learningMediums",
+  "loading",
+  "email",
+] as const satisfies readonly OnboardingStepId[];
 
 const LANGUAGE_OPTIONS: Array<{
   value: NonNullable<OnboardingAnswers["language"]>;
@@ -74,13 +100,14 @@ const LEVEL_CHOICE_OPTIONS = [
 }));
 
 function headerTitle(stepId: OnboardingStepId): string {
-  if (stepId === "loading" || stepId === "email") return "AI language tutor";
-  if (stepId === "goals" || stepId === "learningStyle" || stepId === "struggles") return "Your plan";
+  if (stepId === "loading" || stepId === "email" || stepId === "thankYouNav") return "AI Language Tutor";
+  if (stepId === "goals" || stepId === "learningStyle" || stepId === "struggles" || stepId === "learningMediums")
+    return "Your plan";
   return "My profile";
 }
 
 function isMultiSelectStep(stepId: OnboardingStepId) {
-  return stepId === "goals" || stepId === "struggles";
+  return stepId === "goals" || stepId === "struggles" || stepId === "learningMediums";
 }
 
 /** Single-choice steps: tap an option to continue (no Continue button). */
@@ -101,6 +128,22 @@ function clampText(s: string, maxLen: number) {
   return `${t.slice(0, maxLen - 1)}…`;
 }
 
+/** “None of these” is mutually exclusive with other struggle options (question 6). */
+const STRUGGLES_EXCLUSIVE_NONE = "none_believe_can_do_it" as const;
+
+function nextStrugglesSelection(
+  prev: OnboardingAnswers["struggles"],
+  v: OnboardingAnswers["struggles"],
+): OnboardingAnswers["struggles"] {
+  if (v.includes(STRUGGLES_EXCLUSIVE_NONE) && !prev.includes(STRUGGLES_EXCLUSIVE_NONE)) {
+    return [STRUGGLES_EXCLUSIVE_NONE];
+  }
+  if (prev.includes(STRUGGLES_EXCLUSIVE_NONE) && v.includes(STRUGGLES_EXCLUSIVE_NONE) && v.length > 1) {
+    return v.filter((x) => x !== STRUGGLES_EXCLUSIVE_NONE);
+  }
+  return v;
+}
+
 function canProceed(stepId: OnboardingStepId, a: OnboardingAnswers) {
   switch (stepId) {
     case "language":
@@ -112,6 +155,9 @@ function canProceed(stepId: OnboardingStepId, a: OnboardingAnswers) {
     case "summaryMap":
     case "summaryLadder":
     case "summaryStruggle":
+    case "summaryAiTutor":
+    case "summaryExpertsScience":
+    case "thankYouNav":
       return true;
     case "goals":
       return a.goals.length >= 1;
@@ -121,6 +167,8 @@ function canProceed(stepId: OnboardingStepId, a: OnboardingAnswers) {
       return a.struggles.length >= 1;
     case "bobHeard":
       return a.bob !== null;
+    case "learningMediums":
+      return a.learningMediums.length >= 1;
     case "loading":
       return false;
     case "email":
@@ -134,19 +182,227 @@ function isValidEmail(raw: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.trim());
 }
 
-function LoadingStep() {
-  const [pct, setPct] = useState(0);
-  useEffect(() => {
-    const start = performance.now();
-    const duration = 3800;
-    let frame = 0;
-    function tick(now: number) {
-      const t = Math.min(1, (now - start) / duration);
-      setPct(Math.round(t * 99));
-      if (t < 1) frame = requestAnimationFrame(tick);
+/** ISO 3166-1 alpha-2 → regional-indicator flag emoji; invalid / unknown → globe. */
+function flagEmojiFromRegionCode(region: string | undefined): string {
+  if (!region || region.length !== 2) return "🌍";
+  const upper = region.toUpperCase();
+  const A = 0x1f1e6;
+  const c0 = upper.codePointAt(0);
+  const c1 = upper.codePointAt(1);
+  if (c0 === undefined || c1 === undefined) return "🌍";
+  const i0 = c0 - 0x41;
+  const i1 = c1 - 0x41;
+  if (i0 < 0 || i0 > 25 || i1 < 0 || i1 > 25) return "🌍";
+  return String.fromCodePoint(A + i0, A + i1);
+}
+
+function viewerRegionFromNavigator(): string | undefined {
+  if (typeof navigator === "undefined") return undefined;
+  const raw = navigator.languages?.[0] ?? navigator.language;
+  if (!raw) return undefined;
+  try {
+    const loc = new Intl.Locale(raw);
+    if (loc.region && /^[A-Za-z]{2}$/.test(loc.region)) return loc.region;
+  } catch {
+    /* ignore */
+  }
+  const parts = raw.split(/[-_]/);
+  const last = parts[parts.length - 1];
+  if (last && /^[A-Za-z]{2}$/.test(last) && last !== raw) return last;
+  return undefined;
+}
+
+const LOADER_DURATION_MS = 8000;
+
+const LOADER_GOAL_LABEL: Record<GoalId, string> = {
+  speak_confidently: "Speak confidently",
+  become_fluent: "Become fluent",
+  travel_easily: "Travel easily",
+  watch_movies: "Watch movies",
+  enjoy_music: "Enjoy music",
+  understand_culture: "Understand culture",
+  grow_career: "Grow career",
+  pass_exams: "Pass exams",
+};
+
+const LOADER_MEDIUM_LABEL: Record<LearningMediumId, string> = {
+  practice_exercises: "Practice exercises",
+  images_videos: "Images & Videos",
+  listening: "Listening",
+  reading_writing: "Reading & Writing",
+};
+
+const LOADER_LEARNING_STYLE_LABEL: Record<LearningStyleId, string> = {
+  struggle_a_lot: "I struggle a lot",
+  could_be_better: "Could be better",
+  pretty_confident: "Pretty confident",
+};
+
+type LoaderSpeedSeg = { u0: number; u1: number; exp: number; dp: number };
+
+/** Random time segments with per-segment power easing so the ring speeds up and slows unevenly. */
+function buildLoaderSpeedSegments(): LoaderSpeedSeg[] {
+  const segs: LoaderSpeedSeg[] = [];
+  let u = 0;
+  let guard = 0;
+  while (u < 1 - 1e-9 && guard++ < 48) {
+    const du = Math.min(1 - u, 0.035 + Math.random() * 0.24);
+    const u1 = Math.min(1, u + du);
+    segs.push({ u0: u, u1, exp: 0.28 + Math.random() * 2.25, dp: 0 });
+    u = u1;
+  }
+  if (segs.length === 0) segs.push({ u0: 0, u1: 1, exp: 1, dp: 1 });
+  const sum = segs.reduce((s, g) => s + (g.u1 - g.u0), 0);
+  for (const g of segs) g.dp = sum > 0 ? (g.u1 - g.u0) / sum : 1 / segs.length;
+  return segs;
+}
+
+function loaderProgressFromSegments(segs: LoaderSpeedSeg[], u: number): number {
+  let p = 0;
+  for (const g of segs) {
+    if (u <= g.u0) break;
+    if (u >= g.u1) p += g.dp;
+    else {
+      const w = (u - g.u0) / (g.u1 - g.u0);
+      p += g.dp * Math.pow(Math.max(0, Math.min(1, w)), g.exp);
+      break;
     }
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+  }
+  return Math.min(99, Math.round(p * 99));
+}
+
+function loaderPhase(elapsedMs: number): 0 | 1 | 2 | 3 {
+  if (elapsedMs < 2000) return 0;
+  if (elapsedMs < 4000) return 1;
+  if (elapsedMs < 6000) return 2;
+  return 3;
+}
+
+function loaderStatusMessage(phase: 0 | 1 | 2 | 3, a: OnboardingAnswers): string {
+  const lang = resolvedLanguageDisplay(a);
+  const langTitle = lang === "your chosen" ? "Language" : lang;
+  switch (phase) {
+    case 0:
+      return `Creating your ${langTitle} Learning Plan`;
+    case 1: {
+      const lv = languageLevelLabel(a.level);
+      const age = ageLabelForStats(a.age);
+      const goalParts = a.goals.map((g) => LOADER_GOAL_LABEL[g]);
+      const goalStr =
+        goalParts.length === 0 ? "your goals" : goalParts.length <= 3 ? goalParts.join(", ") : `${goalParts.slice(0, 2).join(", ")}, +${goalParts.length - 2} more`;
+      return `Processing inputs: ${lv} level, age ${age}, goals: ${goalStr}…`;
+    }
+    case 2: {
+      const prefs = a.learningMediums.map((m) => LOADER_MEDIUM_LABEL[m]).join(", ");
+      const skills =
+        a.learningStyle !== null ? `; learning skills: ${LOADER_LEARNING_STYLE_LABEL[a.learningStyle]}` : "";
+      return `Tuning plan with user preferences: ${prefs || "your selected formats"}${skills}`;
+    }
+    default:
+      return "Wrapping up your personalized plan…";
+  }
+}
+
+function LoadingStep({
+  answers,
+  onDailyTime,
+  onComplete,
+}: {
+  answers: OnboardingAnswers;
+  onDailyTime: (v: DailyTimeCommitmentId) => void;
+  onComplete: () => void;
+}) {
+  const answersRef = useRef(answers);
+  answersRef.current = answers;
+  const onDailyTimeRef = useRef(onDailyTime);
+  onDailyTimeRef.current = onDailyTime;
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  const [pct, setPct] = useState(0);
+  const [statusText, setStatusText] = useState(() => loaderStatusMessage(0, answers));
+  const [viewerFlag, setViewerFlag] = useState("🌍");
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const phaseRef = useRef<0 | 1 | 2 | 3 | -1>(-1);
+  const totalPauseMsRef = useRef(0);
+  const pauseOpenWallRef = useRef<number | null>(null);
+  const hit51Ref = useRef(false);
+  const completedRef = useRef(false);
+  const rafIdRef = useRef(0);
+
+  const handlePickDailyTime = (v: DailyTimeCommitmentId) => {
+    const when = performance.now();
+    if (pauseOpenWallRef.current !== null) {
+      totalPauseMsRef.current += when - pauseOpenWallRef.current;
+      pauseOpenWallRef.current = null;
+    }
+    setModalOpen(false);
+    onDailyTimeRef.current(v);
+  };
+
+  useEffect(() => {
+    phaseRef.current = -1;
+    completedRef.current = false;
+    hit51Ref.current = false;
+    totalPauseMsRef.current = 0;
+    pauseOpenWallRef.current = null;
+    setModalOpen(false);
+    setPct(0);
+    setStatusText(loaderStatusMessage(0, answersRef.current));
+    setViewerFlag(flagEmojiFromRegionCode(viewerRegionFromNavigator()));
+
+    const segs = buildLoaderSpeedSegments();
+    const start = performance.now();
+
+    function effectiveElapsed(now: number): number {
+      const pOpen = pauseOpenWallRef.current;
+      if (pOpen !== null) return pOpen - start - totalPauseMsRef.current;
+      return now - start - totalPauseMsRef.current;
+    }
+
+    function tick(now: number) {
+      if (completedRef.current) return;
+
+      const a = answersRef.current;
+      let el = Math.min(LOADER_DURATION_MS, effectiveElapsed(now));
+      let u = el / LOADER_DURATION_MS;
+      let nextPct = loaderProgressFromSegments(segs, u);
+
+      if (nextPct >= 51) hit51Ref.current = true;
+
+      if (
+        pauseOpenWallRef.current === null &&
+        a.dailyTimeCommitment === null &&
+        nextPct >= 51
+      ) {
+        pauseOpenWallRef.current = now;
+        setModalOpen(true);
+        el = Math.min(LOADER_DURATION_MS, effectiveElapsed(now));
+        u = el / LOADER_DURATION_MS;
+        nextPct = loaderProgressFromSegments(segs, u);
+      }
+
+      setPct(Math.round(nextPct));
+
+      const ph = loaderPhase(el);
+      if (ph !== phaseRef.current) {
+        phaseRef.current = ph;
+        setStatusText(loaderStatusMessage(ph, a));
+      }
+
+      const canFinish = el >= LOADER_DURATION_MS && (!hit51Ref.current || a.dailyTimeCommitment !== null);
+      if (canFinish && !completedRef.current) {
+        completedRef.current = true;
+        onCompleteRef.current();
+        return;
+      }
+
+      rafIdRef.current = requestAnimationFrame(tick);
+    }
+
+    rafIdRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafIdRef.current);
   }, []);
 
   const r = 64;
@@ -154,7 +410,7 @@ function LoadingStep() {
   const dashOffset = circumference * (1 - pct / 100);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center px-1">
+    <div className="relative mx-auto flex w-full max-w-md flex-col items-center px-1">
       <h2 className="sr-only">Building your plan</h2>
 
       <div className="relative mx-auto aspect-square w-[min(100%,160px)] sm:w-[min(100%,170px)]">
@@ -179,31 +435,72 @@ function LoadingStep() {
         </div>
       </div>
 
-      <p className="mt-6 max-w-sm text-center text-base font-medium leading-snug text-funnel-ink">
-        Creating your Personalized Learning Plan
+      <p className="mt-6 max-w-sm text-pretty text-center text-sm font-medium leading-snug text-funnel-ink sm:text-base">
+        {statusText}
       </p>
 
       <div className="mt-8 text-center">
         <p className="text-[1.2rem] font-bold leading-tight text-funnel-primary sm:text-xl">
           Over 800&nbsp;000 people
         </p>
-        <p className="mt-1 text-base font-normal text-funnel-ink">have chosen our AI language tutor app</p>
+        <p className="mt-1 text-base font-normal text-funnel-ink">have chosen our AI Language Tutor app</p>
       </div>
 
       <div className="mt-10 w-full rounded-2xl bg-neutral-100 px-4 py-4 text-left sm:px-5 sm:py-5">
-        <div className="flex gap-0.5 text-amber-500" aria-hidden>
-          {"★★★★★".split("").map((s, i) => (
-            <span key={i} className="text-lg leading-none">
-              {s}
-            </span>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <div className="flex gap-0.5 text-amber-500" aria-hidden>
+            {"★★★★★".split("").map((s, i) => (
+              <span key={i} className="text-lg leading-none">
+                {s}
+              </span>
+            ))}
+          </div>
+          <p className="text-right text-xs font-medium leading-snug text-funnel-muted sm:text-sm">
+            Real user from {viewerFlag}
+          </p>
         </div>
-        <p className="mt-2 text-base font-bold text-funnel-ink">This plan returned my spark back</p>
-        <p className="mt-2 text-sm leading-relaxed text-funnel-ink/90">
-          I wake up feeling refreshed, focused, and like myself again. People keep saying I look more alive, and honestly,
-          I feel it too.
+        <p className="mt-3 text-sm leading-relaxed text-funnel-ink/90 sm:text-[0.9375rem] sm:leading-relaxed">
+          This app is a game changer. After a few weeks I started feeling way more confident speaking and understanding
+          stuff. For the first time, learning a language didn&apos;t feel that hard. And it was just like 10–15 mins a
+          day.
         </p>
       </div>
+
+      {modalOpen ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/45 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:pb-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="loader-daily-time-title"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-funnel-border bg-funnel-surface p-5 shadow-xl sm:p-6">
+            <h3
+              id="loader-daily-time-title"
+              className="text-pretty text-center text-lg font-bold leading-tight text-funnel-ink sm:text-xl"
+            >
+              How much time can you spend learning daily?
+            </h3>
+            <div className="mt-5 flex flex-col gap-2.5">
+              {(
+                [
+                  { value: "up_to_5_mins" as const, label: "up to 5 mins" },
+                  { value: "5_to_15_mins" as const, label: "5–15 mins" },
+                  { value: "more_than_15_mins" as const, label: "more than 15 mins" },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handlePickDailyTime(opt.value)}
+                  className="flex min-h-[52px] w-full touch-manipulation items-center justify-center rounded-xl border border-funnel-border bg-white px-4 py-3 text-center text-base font-medium text-funnel-ink transition hover:border-funnel-primary/40 hover:bg-funnel-selected active:scale-[0.99] sm:min-h-[56px] sm:text-lg"
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -217,6 +514,8 @@ export function OnboardingWizard() {
   const [submitError, setSubmitError] = useState<string>("");
   const [emailSent, setEmailSent] = useState(false);
   const [emailFieldError, setEmailFieldError] = useState<"required" | "invalid" | null>(null);
+  const [emailConfettiBurst, setEmailConfettiBurst] = useState(0);
+  const prevStepIdRef = useRef<OnboardingStepId | null>(null);
 
   const nextDisabled = !canProceed(stepId, a);
   const floatingCtaDisabled =
@@ -227,17 +526,23 @@ export function OnboardingWizard() {
   const showFloatingContinue = stepId !== "loading" && !singleSelect;
 
   useEffect(() => {
-    if (stepId !== "loading") return;
-    const t = window.setTimeout(() => dispatch({ type: "next" }), 4200);
-    return () => window.clearTimeout(t);
-  }, [stepId, dispatch]);
-
-  useEffect(() => {
     if (stepId !== "email") setEmailFieldError(null);
+  }, [stepId]);
+
+  useLayoutEffect(() => {
+    if (stepId === "email" && prevStepIdRef.current !== "email") {
+      setEmailConfettiBurst((k) => k + 1);
+    }
+    prevStepIdRef.current = stepId;
   }, [stepId]);
 
   async function handleContinue() {
     if (stepId === "loading") return;
+
+    if (stepId === "thankYouNav") {
+      setEmailSent(true);
+      return;
+    }
 
     if (stepId === "email") {
       const raw = a.email.trim();
@@ -263,7 +568,7 @@ export function OnboardingWizard() {
           throw new Error(json?.error || "Failed to submit");
         }
         setSubmitState("idle");
-        setEmailSent(true);
+        dispatch({ type: "next" });
       } catch (e) {
         setSubmitState("error");
         setSubmitError(e instanceof Error ? e.message : "Failed to submit");
@@ -294,11 +599,19 @@ export function OnboardingWizard() {
       case "struggles":
         return "Do any of these sound familiar?";
       case "bobHeard":
-        return "Did you hear about Bob from mentor or coach?";
+        return "Did you hear about our AI Tutor from a language professional?";
+      case "summaryAiTutor":
+        return "Introducing AI Language Tutor";
+      case "summaryExpertsScience":
+        return "Built by experts. Backed by science";
+      case "learningMediums":
+        return "What is your learning style?";
       case "loading":
         return "Building your plan";
       case "email":
         return "";
+      case "thankYouNav":
+        return "Thank you!";
       default:
         return "";
     }
@@ -343,6 +656,8 @@ export function OnboardingWizard() {
         return "We only use age to personalize your plan";
       case "goals":
         return "Select all that apply";
+      case "learningMediums":
+        return "Select all that apply";
       case "struggles":
         return (
           <span className="block text-base leading-[1.55] antialiased sm:text-lg sm:leading-[1.58]">
@@ -359,6 +674,26 @@ export function OnboardingWizard() {
             <span> to meet them — give yourself a mini high five</span>
           </p>
         );
+      case "summaryAiTutor":
+        return (
+          <p className="text-pretty leading-[1.6] text-slate-600 antialiased">
+            {
+              "AI Language Tutor is a smarter way to learn a language. It adjusts to you and helps you improve faster with less effort."
+            }
+          </p>
+        );
+      case "summaryExpertsScience":
+        return (
+          <p className="text-pretty leading-[1.6] text-slate-600 antialiased">
+            <span>With our </span>
+            <strong className="font-semibold text-funnel-primary">AI Tutor</strong>
+            <span>, you can make progress up to </span>
+            <strong className="font-semibold text-funnel-primary">2× faster</strong>
+            <span> than with traditional methods</span>
+          </p>
+        );
+      case "thankYouNav":
+        return "Navigation to pages";
       default:
         return undefined;
     }
@@ -408,6 +743,9 @@ export function OnboardingWizard() {
 
   return (
     <div className={`${quizSans.className} flex min-h-dvh flex-col bg-funnel-canvas text-funnel-ink [color-scheme:light]`}>
+      {stepId === "email" && emailConfettiBurst > 0 ? (
+        <EmailStepConfetti burstKey={emailConfettiBurst} />
+      ) : null}
       <FunnelHeader
         title={headerTitle(stepId)}
         onBack={() => dispatch({ type: "back" })}
@@ -521,18 +859,22 @@ export function OnboardingWizard() {
           ) : null}
 
           {stepId === "struggles" ? (
-            <MultiChoiceGrid
-              values={a.struggles}
-              onChange={(v) => dispatch({ type: "answer", key: "struggles", value: v })}
-              options={[
-                { value: "takes_too_long", label: "It takes too long to become fluent" },
-                { value: "forget_what_i_learn", label: "I forget what I learn" },
-                { value: "afraid_to_speak_mistakes", label: "I'm afraid to speak and make mistakes" },
-                { value: "not_enough_time", label: "I don't have enough time" },
-                { value: "boring_or_distracted", label: "It's boring or I get distracted" },
-                { value: "none_believe_can_do_it", label: "None of these — I believe I can do it!" },
-              ]}
-            />
+            <div className="w-full min-w-0 self-stretch">
+              <MultiChoiceGrid
+                values={a.struggles}
+                onChange={(v) =>
+                  dispatch({ type: "answer", key: "struggles", value: nextStrugglesSelection(a.struggles, v) })
+                }
+                options={[
+                  { value: "takes_too_long", label: "It takes too long to become fluent" },
+                  { value: "forget_what_i_learn", label: "I forget what I learn" },
+                  { value: "afraid_to_speak_mistakes", label: "I'm afraid to speak and make mistakes" },
+                  { value: "not_enough_time", label: "I don't have enough time" },
+                  { value: "boring_or_distracted", label: "It's boring or I get distracted" },
+                  { value: "none_believe_can_do_it", label: "None of these — I believe I can do it!" },
+                ]}
+              />
+            </div>
           ) : null}
 
           {stepId === "summaryStruggle" ? (
@@ -558,7 +900,40 @@ export function OnboardingWizard() {
             />
           ) : null}
 
-          {stepId === "loading" ? <LoadingStep /> : null}
+          {stepId === "summaryAiTutor" ? (
+            <div className="-mt-[30px] w-full">
+              <AiCoachSummaryIllustration />
+            </div>
+          ) : null}
+
+          {stepId === "summaryExpertsScience" ? (
+            <div className="-mt-[30px] w-full">
+              <AiCoachVsTraditionalIllustration />
+            </div>
+          ) : null}
+
+          {stepId === "learningMediums" ? (
+            <div className="w-full min-w-0 self-stretch">
+              <MultiChoiceGrid
+                values={a.learningMediums}
+                onChange={(v) => dispatch({ type: "answer", key: "learningMediums", value: v })}
+                options={[
+                  { value: "practice_exercises", label: "Practice exercises" },
+                  { value: "images_videos", label: "Images & Videos" },
+                  { value: "listening", label: "Listening" },
+                  { value: "reading_writing", label: "Reading & Writing" },
+                ]}
+              />
+            </div>
+          ) : null}
+
+          {stepId === "loading" ? (
+            <LoadingStep
+              answers={a}
+              onDailyTime={(v) => dispatch({ type: "answer", key: "dailyTimeCommitment", value: v })}
+              onComplete={() => dispatch({ type: "next" })}
+            />
+          ) : null}
 
           {stepId === "email" ? (
             <div className="w-full max-w-lg space-y-4">
@@ -610,6 +985,22 @@ export function OnboardingWizard() {
                   </a>
                   .
                 </p>
+              </div>
+            </div>
+          ) : null}
+
+          {stepId === "thankYouNav" ? (
+            <div className="mx-auto w-full max-w-md space-y-2.5">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2">
+                {THANK_YOU_Q_STEP_IDS.map((id, i) => (
+                  <SecondaryButton
+                    key={id}
+                    className="!w-full min-w-0 justify-center px-2 text-sm sm:!w-full sm:text-base"
+                    onClick={() => dispatch({ type: "goTo", stepIndex: stepOrder.indexOf(id) })}
+                  >
+                    Q{i + 1}
+                  </SecondaryButton>
+                ))}
               </div>
             </div>
           ) : null}

@@ -10,6 +10,14 @@ const MAP_H = 1024;
 const LADDER_W = 1280;
 const LADDER_H = 853;
 
+/** `public/ai_coach_summary.png` */
+const AI_COACH_SUMMARY_W = 1536;
+const AI_COACH_SUMMARY_H = 1024;
+
+/** `public/ai_coach_vs_traditional1.png` */
+const AI_COACH_VS_TRADITIONAL_W = 1536;
+const AI_COACH_VS_TRADITIONAL_H = 1024;
+
 /** `public/struggle-summary3.png` (portrait) */
 const STRUGGLE_SUMMARY_W = 853;
 const STRUGGLE_SUMMARY_H = 1280;
@@ -46,6 +54,44 @@ export function LadderIllustration() {
         alt="Ladder illustrating progress toward your language goals"
         width={LADDER_W}
         height={LADDER_H}
+        className="h-auto w-full rounded-2xl"
+        sizes="(max-width: 640px) 100vw, 672px"
+      />
+    </div>
+  );
+}
+
+export function AiCoachSummaryIllustration() {
+  return (
+    <div
+      className="mx-auto w-full max-w-xl sm:max-w-2xl"
+      role="img"
+      aria-label="AI Language Tutor illustration"
+    >
+      <Image
+        src="/ai_coach_summary.png"
+        alt="AI Language Tutor illustration"
+        width={AI_COACH_SUMMARY_W}
+        height={AI_COACH_SUMMARY_H}
+        className="h-auto w-full rounded-2xl"
+        sizes="(max-width: 640px) 100vw, 672px"
+      />
+    </div>
+  );
+}
+
+export function AiCoachVsTraditionalIllustration() {
+  return (
+    <div
+      className="mx-auto w-full max-w-xl sm:max-w-2xl"
+      role="img"
+      aria-label="AI coach compared to traditional learning illustration"
+    >
+      <Image
+        src="/ai_coach_vs_traditional1.png"
+        alt="AI coach compared to traditional learning"
+        width={AI_COACH_VS_TRADITIONAL_W}
+        height={AI_COACH_VS_TRADITIONAL_H}
         className="h-auto w-full rounded-2xl"
         sizes="(max-width: 640px) 100vw, 672px"
       />

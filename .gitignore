@@ -37,7 +37,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
-
+TELEGRAM_BOT_TOKEN=8527242300:AAF4OsmUScNDZ6nFPMLQbp-ffszeTjKzFqM
+TELEGRAM_CHAT_ID=AI_Tutor_Dmaltsv_Bot
 # vercel
 .vercel
 

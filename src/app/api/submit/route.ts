@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { languageLevelLabel, resolvedLanguageDisplay } from "@/lib/onboarding/copy";
-import type { LearningStyleId, OnboardingAnswers } from "@/lib/onboarding/types";
+import type {
+  DailyTimeCommitmentId,
+  LearningMediumId,
+  LearningStyleId,
+  OnboardingAnswers,
+} from "@/lib/onboarding/types";
 
 function requiredEnv(name: string) {
   const v = process.env[name];
@@ -17,8 +22,10 @@ function formatTelegramMessage(a: OnboardingAnswers) {
     `Level: ${languageLevelLabel(a.level)}`,
     `Goals: ${a.goals.length ? a.goals.join(", ") : "-"}`,
     `Learning skills: ${a.learningStyle ?? "-"}`,
+    `Learning style (formats): ${a.learningMediums.length ? a.learningMediums.join(", ") : "-"}`,
     `Struggles: ${a.struggles.length ? a.struggles.join(", ") : "-"}`,
     `Heard about Bob: ${a.bob ?? "-"}`,
+    `Daily time: ${a.dailyTimeCommitment ?? "-"}`,
     "",
     `Email: ${a.email || "-"}`,
   ];
@@ -49,8 +56,16 @@ export async function POST(req: Request) {
         if (Array.isArray(ls) && ls[0]) return ls[0] as LearningStyleId;
         return null;
       })(),
+      learningMediums: Array.isArray(b.learningMediums)
+        ? (b.learningMediums as LearningMediumId[])
+        : [],
       struggles: Array.isArray(b.struggles) ? (b.struggles as OnboardingAnswers["struggles"]) : [],
       bob: (b.bob ?? null) as OnboardingAnswers["bob"],
+      dailyTimeCommitment: (() => {
+        const d = b.dailyTimeCommitment;
+        if (d === "up_to_5_mins" || d === "5_to_15_mins" || d === "more_than_15_mins") return d as DailyTimeCommitmentId;
+        return null;
+      })(),
       email: String(b.email ?? ""),
     };
 

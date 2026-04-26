@@ -13,8 +13,10 @@ const initialAnswers: OnboardingAnswers = {
   level: null,
   goals: [],
   learningStyle: null,
+  learningMediums: [],
   struggles: [],
   bob: null,
+  dailyTimeCommitment: null,
   email: "",
 };
 
