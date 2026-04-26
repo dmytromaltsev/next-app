@@ -760,7 +760,7 @@ export function OnboardingWizard() {
           </p>
         );
       case "thankYouNav":
-        return "Click button to return to that question";
+        return undefined;
       default:
         return undefined;
     }

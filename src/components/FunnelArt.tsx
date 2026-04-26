@@ -2,21 +2,21 @@
 
 import Image from "next/image";
 
-/** Matches `public/worldmap_sumaryOLA.webp` (1536×1024). */
-const MAP_W = 1536;
-const MAP_H = 1024;
+/** Matches `public/worldmap_sumaryOLA.webp` (max 1280px wide, RGBA). */
+const MAP_W = 1280;
+const MAP_H = 853;
 
 /** `public/ladder-summary2.webp` */
 const LADDER_W = 1280;
 const LADDER_H = 853;
 
-/** `public/ai_coach_summary.webp` */
-const AI_COACH_SUMMARY_W = 1536;
-const AI_COACH_SUMMARY_H = 1024;
+/** `public/ai_coach_summary.webp` (max 1280px wide, RGBA). */
+const AI_COACH_SUMMARY_W = 1280;
+const AI_COACH_SUMMARY_H = 853;
 
-/** `public/ai_coach_vs_traditional1.webp` */
-const AI_COACH_VS_TRADITIONAL_W = 1536;
-const AI_COACH_VS_TRADITIONAL_H = 1024;
+/** `public/ai_coach_vs_traditional1.webp` (max 1280px wide, RGBA). */
+const AI_COACH_VS_TRADITIONAL_W = 1280;
+const AI_COACH_VS_TRADITIONAL_H = 853;
 
 /** `public/struggle-summary3.webp` (portrait) */
 const STRUGGLE_SUMMARY_W = 853;
@@ -35,8 +35,9 @@ export function WorldMapIllustration() {
         width={MAP_W}
         height={MAP_H}
         className="h-auto w-full rounded-2xl"
-        sizes="(max-width: 640px) 100vw, 672px"
+        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 90vw, 672px"
         priority
+        quality={82}
       />
     </div>
   );
@@ -55,7 +56,8 @@ export function LadderIllustration() {
         width={LADDER_W}
         height={LADDER_H}
         className="h-auto w-full rounded-2xl"
-        sizes="(max-width: 640px) 100vw, 672px"
+        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 90vw, 672px"
+        quality={82}
       />
     </div>
   );
@@ -74,7 +76,8 @@ export function AiCoachSummaryIllustration() {
         width={AI_COACH_SUMMARY_W}
         height={AI_COACH_SUMMARY_H}
         className="h-auto w-full rounded-2xl"
-        sizes="(max-width: 640px) 100vw, 672px"
+        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 90vw, 672px"
+        quality={82}
       />
     </div>
   );
@@ -93,7 +96,8 @@ export function AiCoachVsTraditionalIllustration() {
         width={AI_COACH_VS_TRADITIONAL_W}
         height={AI_COACH_VS_TRADITIONAL_H}
         className="h-auto w-full rounded-2xl"
-        sizes="(max-width: 640px) 100vw, 672px"
+        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 90vw, 672px"
+        quality={82}
       />
     </div>
   );
@@ -115,7 +119,8 @@ export function StruggleSummaryIllustration() {
         alt="Illustration about learning method and progress"
         fill
         className="object-contain object-top [clip-path:inset(10px_0_0_0)]"
-        sizes="(max-width: 640px) 100vw, 512px"
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 512px"
+        quality={82}
       />
     </div>
   );
